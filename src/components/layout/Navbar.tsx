@@ -25,7 +25,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Hub", href: "/", icon: Swords },
+  { name: "Hub", href: "/dashboard", icon: Swords },
   { name: "Quests", href: "/quests", icon: Scroll },
   { name: "Stats", href: "/stats", icon: BarChart3 },
   { name: "Inventory", href: "/inventory", icon: Backpack },
@@ -119,19 +119,19 @@ export const Navbar: React.FC = () => {
             {/* Level Badge */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-950/40 border border-purple-500/40 text-purple-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               <span className="text-[10px] text-purple-400 font-sans uppercase">LVL</span>
-              <span>7</span>
+              <span>1</span>
             </div>
 
             {/* Gold Pill */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
               <Coins className="w-3.5 h-3.5 text-amber-400" />
-              <span>420</span>
+              <span>0</span>
             </div>
 
             {/* Streak Pill */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-              <Flame className="w-3.5 h-3.5 text-rose-400 animate-pulse" />
-              <span>5d</span>
+              <Flame className="w-3.5 h-3.5 text-rose-400" />
+              <span>0d</span>
             </div>
           </div>
 
@@ -140,7 +140,7 @@ export const Navbar: React.FC = () => {
             {/* Mobile streak indicator */}
             <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono">
               <Coins className="w-3 h-3 text-amber-400" />
-              <span>420</span>
+              <span>0</span>
             </div>
 
             <button
@@ -170,19 +170,19 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center justify-between p-3 mb-2 rounded-lg bg-rpg-surface-subtle border border-rpg-surface-border">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-md bg-purple-900/60 border border-purple-500/50 flex items-center justify-center text-purple-200 font-mono text-xs font-bold">
-                  7
+                  1
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-white">Apprentice Warrior</div>
-                  <div className="text-[10px] text-slate-400">Level 7 Hero</div>
+                  <div className="text-xs font-bold text-white">New Adventurer</div>
+                  <div className="text-[10px] text-slate-400">Level 1 Hero</div>
                 </div>
               </div>
               <div className="flex items-center gap-2 font-mono text-xs">
                 <span className="flex items-center gap-1 text-amber-300">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" /> 420
+                  <Coins className="w-3.5 h-3.5 text-amber-400" /> 0
                 </span>
                 <span className="flex items-center gap-1 text-rose-300">
-                  <Flame className="w-3.5 h-3.5 text-rose-400" /> 5d
+                  <Flame className="w-3.5 h-3.5 text-rose-400" /> 0d
                 </span>
               </div>
             </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveOnboardingData } from "../../../lib/onboarding";
+import { getOnboardingData, saveOnboardingData } from "../../../lib/onboarding";
 
 type Goal = {
   name: string;
@@ -74,6 +74,16 @@ const goals: Goal[] = [
 export default function GoalsPage() {
   const router = useRouter();
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+
+  useEffect(() => {
+    const savedGoals = getOnboardingData().goals;
+
+    setSelectedGoals(
+      savedGoals.filter((savedGoal) =>
+        goals.some((goal) => goal.name === savedGoal)
+      )
+    );
+  }, []);
 
   // Select / deselect individual goal
   const toggleGoal = (name: string) => {

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getOnboardingData, saveOnboardingData } from "@/lib/onboarding";
 
 type Path = {
   name: string;
@@ -39,7 +41,16 @@ const paths: Path[] = [
 ];
 
 export default function PathPage() {
+  const router = useRouter();
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedPath = getOnboardingData().path;
+
+    if (paths.some((path) => path.name === savedPath)) {
+      setSelectedPath(savedPath);
+    }
+  }, []);
 
   const handlePathClick = (name: string) => {
     setSelectedPath((current) => (current === name ? null : name));
@@ -48,10 +59,8 @@ export default function PathPage() {
   const handleContinue = () => {
     if (!selectedPath) return;
 
-    console.log("Selected path:", selectedPath);
-
-    // Next step yaha connect karenge
-    // router.push("/onboarding/goals");
+    saveOnboardingData({ path: selectedPath });
+    router.push("/onboarding/goals");
   };
 
   return (
@@ -478,6 +487,7 @@ export default function PathPage() {
 
           <button
             type="button"
+            onClick={() => router.push("/onboarding")}
             className="group flex items-center gap-3
             text-white/40 transition hover:text-white"
           >

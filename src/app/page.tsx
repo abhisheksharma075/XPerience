@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -58,16 +59,22 @@ export default function HomePage() {
 
             {/* Buttons */}
             <div className="flex flex-col gap-3 sm:flex-row">
-              <button className="group inline-flex items-center justify-center gap-2 rounded-xl bg-rpg-gold px-6 py-3.5 font-bold text-black shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5 hover:brightness-110">
+              <Link
+                href="/onboarding"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-rpg-gold px-6 py-3.5 font-bold text-black shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5 hover:brightness-110"
+              >
                 <Sword className="h-5 w-5" />
                 Begin Your XPerience
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </button>
+              </Link>
 
-              <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-rpg-surface-border bg-rpg-surface/60 px-6 py-3.5 font-semibold text-slate-200 transition hover:border-purple-400/40 hover:bg-rpg-surface">
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-rpg-surface-border bg-rpg-surface/60 px-6 py-3.5 font-semibold text-slate-200 transition hover:border-purple-400/40 hover:bg-rpg-surface"
+              >
                 <Gamepad2 className="h-5 w-5 text-purple-400" />
                 Explore the Journey
-              </button>
+              </a>
             </div>
 
             {/* Features */}
@@ -206,7 +213,7 @@ export default function HomePage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="relative border-t border-rpg-surface-border px-5 py-20 sm:px-8">
+      <section id="how-it-works" className="relative border-t border-rpg-surface-border px-5 py-20 sm:px-8">
         <div className="mx-auto max-w-6xl">
           
           <div className="mx-auto max-w-2xl text-center">
@@ -269,10 +276,13 @@ export default function HomePage() {
             the one you're already living.
           </p>
 
-          <button className="mt-8 inline-flex items-center gap-2 rounded-xl bg-rpg-gold px-7 py-3.5 font-bold text-black transition hover:brightness-110">
+          <Link
+            href="/onboarding"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-rpg-gold px-7 py-3.5 font-bold text-black transition hover:brightness-110"
+          >
             Start Your Journey
             <ArrowRight className="h-5 w-5" />
-          </button>
+          </Link>
         </div>
       </section>
     </main>
