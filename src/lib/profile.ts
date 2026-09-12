@@ -68,7 +68,7 @@ export async function ensureProfile(
   }
 ): Promise<{ profile: Profile | null; error: string | null }> {
   // First, attempt to retrieve the existing profile
-  const { profile: existingProfile, error: fetchError } = await getProfile(
+  const { profile: existingProfile } = await getProfile(
     supabase,
     user.id
   );

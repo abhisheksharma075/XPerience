@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getOnboardingData, saveOnboardingData } from "../../../lib/onboarding";
+import { getOnboardingData, saveOnboardingData, syncOnboardingToProfile } from "@/lib/onboarding";
+import { createClient } from "@/lib/supabase/client";
 
 type Goal = {
   name: string;
@@ -102,15 +103,36 @@ export default function GoalsPage() {
     setSelectedGoals([]);
   };
 
-  // Save selected goals and continue to dashboard
-  const handleContinue = () => {
-    if (selectedGoals.length === 0) return;
+  const [isSyncing, setIsSyncing] = useState(false);
 
+  // Save selected goals and continue to dashboard
+  const handleContinue = async () => {
+    if (selectedGoals.length === 0 || isSyncing) return;
+
+    setIsSyncing(true);
     saveOnboardingData({
       goals: selectedGoals,
     });
 
-    router.push("/dashboard");
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        await syncOnboardingToProfile(supabase, user.id, {
+          goals: selectedGoals,
+        });
+        router.push("/dashboard");
+      } else {
+        router.push("/signup?redirectedFrom=/dashboard");
+      }
+    } catch {
+      router.push("/dashboard");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (

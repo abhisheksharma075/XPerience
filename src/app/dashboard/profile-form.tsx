@@ -28,7 +28,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
 
     try {
       const supabase = createClient();
-      const { profile, error: updateError } = await updateProfile(
+      const { error: updateError } = await updateProfile(
         supabase,
         initialProfile.id,
         {

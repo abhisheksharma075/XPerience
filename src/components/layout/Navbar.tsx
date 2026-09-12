@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
@@ -15,7 +15,10 @@ import {
   X,
   Flame,
   Coins,
+  LogOut,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { calculateLevelProgress } from "@/lib/levelSystem";
 
 interface NavItem {
   name: string;
@@ -33,7 +36,15 @@ const navItems: NavItem[] = [
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Live Supabase HUD & Auth state
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [displayName, setDisplayName] = useState<string>("Adventurer");
+  const [level, setLevel] = useState<number | null>(null);
+  const [gold, setGold] = useState<number | null>(null);
+  const [streak, setStreak] = useState<number | null>(null);
 
   // Close mobile drawer when route changes or user hits Escape
   useEffect(() => {
@@ -47,6 +58,68 @@ export const Navbar: React.FC = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Fetch live character status & subscribe to auth state
+  useEffect(() => {
+    const supabase = createClient();
+
+    async function checkAuthAndProfile() {
+      try {
+        const {
+          data: { user: currentUser },
+        } = await supabase.auth.getUser();
+
+        if (currentUser) {
+          setUser(currentUser);
+
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name, xp, gold, current_streak")
+            .eq("id", currentUser.id)
+            .maybeSingle();
+
+          if (profile) {
+            const progress = calculateLevelProgress(profile.xp || 0);
+            setLevel(progress.currentLevel);
+            setGold(profile.gold || 0);
+            setStreak(profile.current_streak || 0);
+            setDisplayName(
+              profile.display_name ||
+                currentUser.email?.split("@")[0] ||
+                "Hero"
+            );
+          }
+        } else {
+          setUser(null);
+          setLevel(null);
+          setGold(null);
+          setStreak(null);
+        }
+      } catch (err) {
+        console.error("Navbar auth check error:", err);
+      }
+    }
+
+    checkAuthAndProfile();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      checkAuthAndProfile();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [pathname]);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setUser(null);
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-rpg-surface-border bg-rpg-void/90 backdrop-blur-md">
@@ -83,7 +156,10 @@ export const Navbar: React.FC = () => {
             </Link>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center space-x-0.5 lg:space-x-1" aria-label="Main Navigation">
+            <nav
+              className="hidden md:flex items-center space-x-0.5 lg:space-x-1"
+              aria-label="Main Navigation"
+            >
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -100,7 +176,12 @@ export const Navbar: React.FC = () => {
                         : "text-slate-400 hover:text-slate-200 hover:bg-rpg-surface-subtle"
                     )}
                   >
-                    <Icon className={cn("w-4 h-4", isActive ? "text-rpg-gold" : "text-slate-400")} />
+                    <Icon
+                      className={cn(
+                        "w-4 h-4",
+                        isActive ? "text-rpg-gold" : "text-slate-400"
+                      )}
+                    />
                     <span>{item.name}</span>
                     {isActive && (
                       <motion.div
@@ -114,43 +195,86 @@ export const Navbar: React.FC = () => {
             </nav>
           </div>
 
-          {/* Character Quick HUD (Level, Gold, Streak) */}
+          {/* Character Quick HUD (Level, Gold, Streak, Auth) */}
           <div className="hidden md:flex items-center gap-2 lg:gap-3">
-            {/* Level Badge */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-950/40 border border-purple-500/40 text-purple-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(168,85,247,0.2)]">
-              <span className="text-[10px] text-purple-400 font-sans uppercase">LVL</span>
-              <span>1</span>
-            </div>
+            {user ? (
+              <>
+                {/* Level Badge */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-950/40 border border-purple-500/40 text-purple-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                  <span className="text-[10px] text-purple-400 font-sans uppercase">
+                    LVL
+                  </span>
+                  <span>{level ?? 1}</span>
+                </div>
 
-            {/* Gold Pill */}
-            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-              <Coins className="w-3.5 h-3.5 text-amber-400" />
-              <span>0</span>
-            </div>
+                {/* Gold Pill */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                  <Coins className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{gold ?? 0} G</span>
+                </div>
 
-            {/* Streak Pill */}
-            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-              <Flame className="w-3.5 h-3.5 text-rose-400" />
-              <span>0d</span>
-            </div>
+                {/* Streak Pill */}
+                <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+                  <Flame className="w-3.5 h-3.5 text-rose-400" />
+                  <span>{streak ?? 0}d</span>
+                </div>
+
+                {/* User Name & Sign Out */}
+                <div className="flex items-center gap-2 pl-2 border-l border-rpg-surface-border">
+                  <span className="text-xs text-slate-300 font-semibold max-w-[120px] truncate">
+                    {displayName}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    title="Sign Out"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rpg-surface-elevated transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-rpg-gold text-rpg-void shadow-gold-glow transition hover:brightness-110"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Mobile Menu Toggle Button */}
           <div className="flex md:hidden items-center gap-2">
-            {/* Mobile streak indicator */}
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono">
-              <Coins className="w-3 h-3 text-amber-400" />
-              <span>0</span>
-            </div>
+            {user && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono">
+                <Coins className="w-3 h-3 text-amber-400" />
+                <span>{gold ?? 0}</span>
+              </div>
+            )}
 
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-rpg-surface-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rpg-gold"
-              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-label={
+                mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"
+              }
               aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
@@ -167,25 +291,50 @@ export const Navbar: React.FC = () => {
             className="md:hidden border-b border-rpg-surface-border bg-rpg-surface/98 backdrop-blur-lg px-4 pt-3 pb-5 space-y-2"
           >
             {/* Character Quick Info in Mobile Menu */}
-            <div className="flex items-center justify-between p-3 mb-2 rounded-lg bg-rpg-surface-subtle border border-rpg-surface-border">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-purple-900/60 border border-purple-500/50 flex items-center justify-center text-purple-200 font-mono text-xs font-bold">
-                  1
+            {user ? (
+              <div className="flex items-center justify-between p-3 mb-2 rounded-lg bg-rpg-surface-subtle border border-rpg-surface-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-md bg-purple-900/60 border border-purple-500/50 flex items-center justify-center text-purple-200 font-mono text-xs font-bold">
+                    {level ?? 1}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white">
+                      {displayName}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Level {level ?? 1} Hero
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-white">New Adventurer</div>
-                  <div className="text-[10px] text-slate-400">Level 1 Hero</div>
+                <div className="flex items-center gap-3 font-mono text-xs">
+                  <span className="flex items-center gap-1 text-amber-300">
+                    <Coins className="w-3.5 h-3.5 text-amber-400" /> {gold ?? 0}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="p-1 rounded text-slate-400 hover:text-rose-400"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 font-mono text-xs">
-                <span className="flex items-center gap-1 text-amber-300">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" /> 0
-                </span>
-                <span className="flex items-center gap-1 text-rose-300">
-                  <Flame className="w-3.5 h-3.5 text-rose-400" /> 0d
-                </span>
+            ) : (
+              <div className="flex items-center gap-2 p-2 mb-2">
+                <Link
+                  href="/login"
+                  className="flex-1 text-center py-2 rounded-lg text-xs font-semibold bg-rpg-surface-elevated text-slate-200"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex-1 text-center py-2 rounded-lg text-xs font-bold bg-rpg-gold text-rpg-void"
+                >
+                  Sign Up
+                </Link>
               </div>
-            </div>
+            )}
 
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -202,7 +351,12 @@ export const Navbar: React.FC = () => {
                       : "text-slate-300 hover:text-white hover:bg-rpg-surface-subtle"
                   )}
                 >
-                  <Icon className={cn("w-4 h-4", isActive ? "text-rpg-gold" : "text-slate-400")} />
+                  <Icon
+                    className={cn(
+                      "w-4 h-4",
+                      isActive ? "text-rpg-gold" : "text-slate-400"
+                    )}
+                  />
                   <span>{item.name}</span>
                 </Link>
               );

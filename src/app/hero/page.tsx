@@ -2,24 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
-  BookOpen,
-  Crosshair,
   Crown,
-  Dumbbell,
   Flame,
   Scroll,
   Shield,
   Sparkles,
   Swords,
-  Target,
   User,
-  WandSparkles,
+  Zap,
 } from "lucide-react";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { getOnboardingData, type OnboardingData } from "@/lib/onboarding";
+import { createClient } from "@/lib/supabase/client";
+import { calculateLevelProgress } from "@/lib/levelSystem";
+import { getQuests } from "@/lib/quests";
+import { getOnboardingData } from "@/lib/onboarding";
 
 type PathDetails = {
   name: string;
@@ -47,121 +47,127 @@ const pathDetails: Record<string, PathDetails> = {
 
 const pathStories: Record<string, string> = {
   Warrior:
-    "You chose the path of strength, discipline, and resilience. Every challenge is another chance to become stronger.",
+    "You chose the Path of the Warrior. You understand that motivation is fleeting, but discipline is unbreakable. Every day is a battleground of choices, and you choose to show up, train your mind and body, and conquer resistance.",
   Sage:
-    "You chose the path of knowledge, focus, and growth. Every lesson sharpens the mind and expands what you can become.",
+    "You chose the Path of the Sage. You perceive that true power is born from understanding. You seek truth, cultivate mental clarity, and transform scattered thoughts into profound wisdom that illuminates your way.",
   Creator:
-    "You chose the path of creativity, productivity, and impact. Every idea is a chance to turn imagination into something real.",
+    "You chose the Path of the Creator. You recognize that the future belongs to those who build. You translate raw inspiration into tangible reality, shipping projects and turning dreams into monuments of purpose.",
 };
 
 const defaultStory =
-  "Your hero's story is waiting to be written. Choose your path and embark upon your daily quests to discover the legend you are becoming.";
+  "Your hero journey has begun. Every quest you conquer and habit you forge will write the next chapter of your legend.";
 
-const goalImages: Record<string, string> = {
-  Fitness: "/images/fitness.png",
-  Learning: "/images/learning.png",
-  "Mental Growth": "/images/mental-growth.png",
-  Career: "/images/career.png",
-  Creativity: "/images/creativity.png",
-  Finance: "/images/finance.png",
-  Relationships: "/images/relationships.png",
-  "Personal Growth": "/images/personal-growth.png",
-};
-
-const heroAttributes = [
-  {
-    name: "Strength",
-    value: 24,
-    icon: Dumbbell,
-    colorClass: "text-rose-400",
-    borderClass: "border-rose-500/30",
-    bgClass: "bg-rose-500/10",
-    progressVariant: "health" as const,
-  },
-  {
-    name: "Focus",
-    value: 31,
-    icon: Crosshair,
-    colorClass: "text-cyan-400",
-    borderClass: "border-cyan-500/30",
-    bgClass: "bg-cyan-500/10",
-    progressVariant: "mana" as const,
-  },
-  {
-    name: "Creativity",
-    value: 28,
-    icon: WandSparkles,
-    colorClass: "text-fuchsia-400",
-    borderClass: "border-fuchsia-500/30",
-    bgClass: "bg-fuchsia-500/10",
-    progressVariant: "xp" as const,
-  },
-  {
-    name: "Discipline",
-    value: 35,
-    icon: Target,
-    colorClass: "text-amber-400",
-    borderClass: "border-amber-500/30",
-    bgClass: "bg-amber-500/10",
-    progressVariant: "gold" as const,
-  },
-];
-
-const loadoutSlots = [
+const heroLoadout = [
   {
     type: "Weapon",
-    label: "Main Hand",
+    label: "Iron Willblade",
     icon: Swords,
-    status: "Slot Empty",
+    status: "Equipped",
     description: "Primary offensive armament",
   },
   {
     type: "Armor",
-    label: "Torso Defense",
+    label: "Aegis of Habit",
     icon: Shield,
-    status: "Slot Empty",
-    description: "Body armor & protection",
+    status: "Equipped",
+    description: "Protective cuirass of daily consistency",
   },
   {
-    type: "Accessory",
-    label: "Talisman",
-    icon: Sparkles,
-    status: "Slot Empty",
-    description: "Amulet or stat enhancer",
+    type: "Focus Trinket",
+    label: "Prism of Clarity",
+    icon: Zap,
+    status: "Equipped",
+    description: "Amulet for mental focus",
   },
   {
     type: "Relic",
     label: "Ancient Keystone",
     icon: Flame,
-    status: "Slot Empty",
+    status: "Slot Ready",
     description: "Legendary passive amplifier",
   },
 ];
 
 export default function HeroPage() {
-  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
+  const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const [heroName, setHeroName] = useState("Hero");
+  const [pathName, setPathName] = useState("Warrior");
+  const [level, setLevel] = useState(1);
+  const [xp, setXp] = useState(0);
+  const [gold, setGold] = useState(0);
+  const [activeQuestsCount, setActiveQuestsCount] = useState(0);
+  const [completedQuestsCount, setCompletedQuestsCount] = useState(0);
+
   useEffect(() => {
-    setOnboardingData(getOnboardingData());
-    setIsLoaded(true);
-  }, []);
+    async function loadHeroData() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          router.push("/login?redirectedFrom=/hero");
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        const onboarding = getOnboardingData();
+
+        if (profile) {
+          setHeroName(
+            profile.display_name ||
+              onboarding.name ||
+              user.email?.split("@")[0] ||
+              "Hero"
+          );
+          setXp(profile.xp || 0);
+          setGold(profile.gold || 0);
+
+          const progress = calculateLevelProgress(profile.xp || 0);
+          setLevel(progress.currentLevel);
+        }
+
+        if (onboarding.path) {
+          setPathName(onboarding.path);
+        }
+
+        // Fetch quest counts
+        const { quests } = await getQuests(supabase, user.id);
+        if (quests) {
+          setActiveQuestsCount(
+            quests.filter((q) => q.status === "active").length
+          );
+          setCompletedQuestsCount(
+            quests.filter((q) => q.status === "completed").length
+          );
+        }
+      } catch (err) {
+        console.error("Failed loading hero page:", err);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+
+    loadHeroData();
+  }, [router]);
 
   if (!isLoaded) {
     return <HeroLoadingState />;
   }
 
-  const name = typeof onboardingData?.name === "string" ? onboardingData.name.trim() : "";
-  const path = typeof onboardingData?.path === "string" ? onboardingData.path : "";
-  const goals = Array.isArray(onboardingData?.goals)
-    ? onboardingData.goals.filter((goal): goal is string => typeof goal === "string")
-    : [];
-
-  const heroName = name || "New Adventurer";
-  const selectedPath = path ? pathDetails[path] : undefined;
-  const pathName = selectedPath?.name || path || "Unchosen Path";
-  const pathDescription = selectedPath?.description || "Forging destiny through daily discipline.";
-  const storyText = selectedPath ? pathStories[selectedPath.name] || defaultStory : defaultStory;
+  const selectedPath = pathDetails[pathName] || pathDetails.Warrior;
+  const pathDescription =
+    selectedPath.description || "Forging destiny through daily discipline.";
+  const storyText = pathStories[pathName] || defaultStory;
+  const progress = calculateLevelProgress(xp);
 
   return (
     <div className="space-y-7 pb-8 sm:space-y-8">
@@ -177,20 +183,26 @@ export default function HeroPage() {
         <div className="relative">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rpg-gold focus-visible:ring-offset-2 focus-visible:ring-offset-rpg-void"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rpg-gold"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
+            Back to Dashboard Hub
           </Link>
 
           <div className="mt-7 max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-purple-300/25 bg-purple-500/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-purple-200">
               <User className="h-3.5 w-3.5 text-purple-300" />
-              Hero Profile
+              Hero Chronicle
             </div>
-            <h1 id="hero-title" className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl">Your Hero</h1>
+            <h1
+              id="hero-title"
+              className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl"
+            >
+              Your Hero
+            </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-              This is the character you are becoming through the choices you make every day.
+              The character you are actively becoming through your choices and
+              actions every single day.
             </p>
           </div>
         </div>
@@ -204,7 +216,6 @@ export default function HeroPage() {
         aria-labelledby="hero-card-title"
         className="relative overflow-hidden rounded-3xl border border-purple-400/25 bg-rpg-surface/85 shadow-2xl backdrop-blur-xl"
       >
-        {/* Cinematic Path Artwork Overlay */}
         {selectedPath?.image && (
           <div
             aria-hidden="true"
@@ -225,7 +236,10 @@ export default function HeroPage() {
               </span>
             </div>
 
-            <h2 id="hero-card-title" className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl">
+            <h2
+              id="hero-card-title"
+              className="mt-4 text-3xl font-black tracking-tight text-white sm:text-5xl"
+            >
               {heroName}
             </h2>
             <p className="mt-2 text-sm leading-6 text-purple-200/90 sm:text-base">
@@ -240,14 +254,24 @@ export default function HeroPage() {
                     <Crown className="h-4 w-4 text-rpg-gold" />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hero Rank</span>
-                    <p className="font-mono text-xs font-black uppercase text-white">Level 01</p>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Hero Rank
+                    </span>
+                    <p className="font-mono text-xs font-black uppercase text-white">
+                      Level {String(level).padStart(2, "0")}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Progress</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Progress
+                  </span>
                   <p className="font-mono text-xs font-bold text-rpg-gold">
-                    0 <span className="text-slate-500">/</span> <span className="text-slate-400">100 XP</span>
+                    {progress.currentLevelXp}{" "}
+                    <span className="text-slate-500">/</span>{" "}
+                    <span className="text-slate-400">
+                      {progress.xpForNextLevel} XP
+                    </span>
                   </p>
                 </div>
               </div>
@@ -255,16 +279,18 @@ export default function HeroPage() {
               <div className="mt-3.5">
                 <ProgressBar
                   label="Hero Level Progress"
-                  value={0}
-                  max={100}
+                  value={progress.currentLevelXp}
+                  max={progress.xpForNextLevel}
                   showValueText={false}
                   size="sm"
                   variant="xp"
                 />
               </div>
-              <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
-                <span>Tier 1 Baseline</span>
-                <span>Next Milestone: Level 2</span>
+              <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400">
+                <span>Tier {level} Progression</span>
+                <span>
+                  {progress.xpToNextLevel} XP to Level {level + 1}
+                </span>
               </div>
             </div>
           </div>
@@ -273,41 +299,63 @@ export default function HeroPage() {
 
       {/* 3. HERO STATUS RIBBON */}
       <section aria-labelledby="hero-status-title">
-        <h2 id="hero-status-title" className="sr-only">Hero Status</h2>
+        <h2 id="hero-status-title" className="sr-only">
+          Hero Status
+        </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <div className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/80 p-4 backdrop-blur-md">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Level</span>
-            <p className="mt-1 font-mono text-2xl font-black text-white">01</p>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Level
+            </span>
+            <p className="mt-1 font-mono text-2xl font-black text-white">
+              {String(level).padStart(2, "0")}
+            </p>
             <span className="text-[10px] text-purple-300">Active Tier</span>
           </div>
 
           <div className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/80 p-4 backdrop-blur-md">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hero Rank</span>
-            <p className="mt-1 text-sm font-black text-rpg-gold truncate">Rising Hero</p>
-            <span className="text-[10px] text-slate-500">Novice Adventurer</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Treasury
+            </span>
+            <p className="mt-1 font-mono text-2xl font-black text-amber-400">
+              {gold} G
+            </p>
+            <span className="text-[10px] text-slate-500">Gold Balance</span>
           </div>
 
           <div className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/80 p-4 backdrop-blur-md">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Session XP</span>
-            <p className="mt-1 font-mono text-2xl font-black text-rpg-gold">0<span className="text-sm font-normal text-slate-500">/100</span></p>
-            <span className="text-[10px] text-slate-500">Level Baseline</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Total XP
+            </span>
+            <p className="mt-1 font-mono text-2xl font-black text-rpg-gold">
+              {xp}
+            </p>
+            <span className="text-[10px] text-slate-500">Lifetime Earned</span>
           </div>
 
           <div className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/80 p-4 backdrop-blur-md">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Active Quests</span>
-            <p className="mt-1 font-mono text-2xl font-black text-purple-200">2</p>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Active Quests
+            </span>
+            <p className="mt-1 font-mono text-2xl font-black text-purple-200">
+              {activeQuestsCount}
+            </p>
             <span className="text-[10px] text-slate-500">In Progress</span>
           </div>
 
           <div className="col-span-2 sm:col-span-1 rounded-2xl border border-rpg-surface-border bg-rpg-surface/80 p-4 backdrop-blur-md">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Completed</span>
-            <p className="mt-1 font-mono text-2xl font-black text-emerald-400">2</p>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Completed
+            </span>
+            <p className="mt-1 font-mono text-2xl font-black text-emerald-400">
+              {completedQuestsCount}
+            </p>
             <span className="text-[10px] text-slate-500">Quests Mastered</span>
           </div>
         </div>
       </section>
 
-      {/* 4. CHARACTER STORY */}
+      {/* 4. CHARACTER STORY & LORE */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -321,215 +369,90 @@ export default function HeroPage() {
             <Scroll className="h-5 w-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300">Narrative Lore</p>
-              <span className="text-slate-600">•</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{pathName}</span>
-            </div>
-            <h2 id="journey-title" className="mt-1 text-xl font-black text-white sm:text-2xl">Your Journey</h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-300 sm:text-base">
+            <h2
+              id="journey-title"
+              className="text-base font-black text-white sm:text-lg"
+            >
+              The Path of {pathName}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-300">
               {storyText}
             </p>
           </div>
         </div>
       </motion.section>
 
-      {/* 5. SELECTED LIFE DOMAINS */}
-      <section aria-labelledby="domains-title">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      {/* 5. HERO LOADOUT */}
+      <section aria-labelledby="gear-title">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300">Domains of Growth</p>
-            <h2 id="domains-title" className="mt-1 text-2xl font-black text-white">Selected Life Domains</h2>
-          </div>
-          {goals.length > 0 && (
-            <span className="rounded-full border border-purple-300/20 bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-200">
-              {goals.length} Active {goals.length === 1 ? "Domain" : "Domains"}
-            </span>
-          )}
-        </div>
-
-        {goals.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {goals.map((goal, idx) => {
-              const domainProgressValues = [65, 50, 75, 45, 80, 60];
-              const progress = domainProgressValues[idx % domainProgressValues.length];
-
-              return (
-                <motion.div
-                  key={goal}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: idx * 0.05, ease: "easeOut" }}
-                  className="group relative min-h-[190px] overflow-hidden rounded-2xl border border-rpg-surface-border bg-rpg-surface/85 p-5 shadow-lg transition-all duration-300 hover:border-purple-400/40"
-                >
-                  {goalImages[goal] && (
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-20 transition-opacity duration-300 group-hover:opacity-30"
-                      style={{ backgroundImage: `url('${goalImages[goal]}')` }}
-                    />
-                  )}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-rpg-surface via-rpg-surface/90 to-rpg-surface/40" />
-
-                  <div className="relative flex h-full flex-col">
-                    <div className="flex items-start justify-between">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-purple-300/25 bg-purple-500/10 text-purple-200">
-                        <BookOpen className="h-4 w-4" />
-                      </div>
-                      <span className="rounded-full border border-purple-400/30 bg-purple-500/15 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-purple-200">
-                        Active Domain
-                      </span>
-                    </div>
-
-                    <div className="mt-auto pt-5">
-                      <h3 className="text-base font-black text-white">{goal}</h3>
-                      <div className="mt-3 border-t border-white/10 pt-2.5">
-                        <ProgressBar
-                          label={`${goal} Progress`}
-                          value={progress}
-                          max={100}
-                          showValueText={false}
-                          size="sm"
-                          variant="xp"
-                        />
-                        <div className="mt-2 flex items-center justify-between text-[11px]">
-                          <span className="font-mono text-purple-300">{progress}% mastery</span>
-                          <span className="font-bold text-rpg-gold">+100 XP</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/60 p-8 text-center backdrop-blur-md">
-            <BookOpen className="mx-auto h-8 w-8 text-purple-300" />
-            <h3 className="mt-3 text-lg font-bold text-white">No Life Domains Selected</h3>
-            <p className="mx-auto mt-2 max-w-sm text-xs text-slate-400">
-              Select your initial life focus areas in onboarding to establish your hero's quest domains.
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300">
+              Equipped Armament
             </p>
-            <div className="mt-5">
-              <Link
-                href="/onboarding/goals"
-                className="inline-flex items-center gap-2 rounded-xl border border-purple-400/30 bg-purple-600/20 px-4 py-2 text-xs font-bold text-purple-200 transition hover:bg-purple-600/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rpg-gold"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Choose Goals
-              </Link>
-            </div>
+            <h2 id="gear-title" className="mt-1 text-2xl font-black text-white">
+              Hero Loadout
+            </h2>
           </div>
-        )}
-      </section>
-
-      {/* 6. HERO ATTRIBUTES */}
-      <section aria-labelledby="attributes-title">
-        <div className="mb-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300">Baseline Ratings</p>
-          <h2 id="attributes-title" className="mt-1 text-2xl font-black text-white">Hero Attributes</h2>
+          <Link
+            href="/inventory"
+            className="text-xs text-purple-300 hover:text-white"
+          >
+            Manage in Inventory →
+          </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {heroAttributes.map((attr, idx) => {
-            const Icon = attr.icon;
+          {heroLoadout.map((item, idx) => {
+            const Icon = item.icon;
             return (
               <motion.div
-                key={attr.name}
-                initial={{ opacity: 0, y: 10 }}
+                key={item.label}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.15 + idx * 0.05, ease: "easeOut" }}
-                className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/85 p-5 backdrop-blur-md transition hover:border-purple-400/35"
+                transition={{
+                  duration: 0.35,
+                  delay: 0.15 + idx * 0.05,
+                  ease: "easeOut",
+                }}
+                className="group relative overflow-hidden rounded-2xl border border-rpg-surface-border bg-rpg-surface/80 p-5 shadow-lg backdrop-blur-md transition-all duration-300 hover:border-purple-400/40"
               >
-                <div className="flex items-center justify-between">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${attr.borderClass} ${attr.bgClass} ${attr.colorClass}`}>
+                <div className="flex items-start justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-purple-400/30 bg-purple-500/10 text-purple-200 shadow-md">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <div className="text-right font-mono">
-                    <span className="text-2xl font-black text-white">{attr.value}</span>
-                    <span className="text-xs font-bold text-slate-500"> / 100</span>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">{attr.name}</h3>
-                </div>
-
-                <div className="mt-3">
-                  <ProgressBar
-                    label={`${attr.name} scale`}
-                    value={attr.value}
-                    max={100}
-                    showValueText={false}
-                    size="sm"
-                    variant={attr.progressVariant}
-                  />
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 7. HERO EQUIPMENT / LOADOUT PREVIEW */}
-      <section aria-labelledby="loadout-title">
-        <div className="mb-4">
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-300">Inventory Readiness</p>
-            <span className="rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-              Stage 7 Preview
-            </span>
-          </div>
-          <h2 id="loadout-title" className="mt-1 text-2xl font-black text-white">Current Loadout</h2>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {loadoutSlots.map((slot, idx) => {
-            const Icon = slot.icon;
-            return (
-              <motion.div
-                key={slot.type}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.2 + idx * 0.05, ease: "easeOut" }}
-                className="group relative rounded-2xl border border-dashed border-rpg-surface-border bg-rpg-surface/60 p-5 backdrop-blur-md transition-all duration-200 hover:border-purple-400/40 hover:bg-rpg-surface/80"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{slot.label}</span>
-                  <span className="rounded-full border border-white/5 bg-black/20 px-2 py-0.5 text-[9px] font-mono text-slate-500">
-                    {slot.status}
+                  <span className="rounded-full border border-purple-400/30 bg-purple-500/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-purple-300">
+                    {item.status}
                   </span>
                 </div>
 
-                <div className="mt-4 flex flex-col items-center justify-center py-4 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-rpg-surface-elevated/80 text-slate-500 transition-colors group-hover:border-purple-400/30 group-hover:text-purple-300">
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-3 text-sm font-bold text-slate-300">{slot.type}</h3>
-                  <p className="mt-1 text-[11px] text-slate-500">{slot.description}</p>
+                <div className="mt-5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    {item.type}
+                  </span>
+                  <h3 className="text-base font-black text-white">
+                    {item.label}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {item.description}
+                  </p>
                 </div>
               </motion.div>
             );
           })}
         </div>
       </section>
-
-      {/* 8. FOOTER NOTE */}
-      <div className="pt-2 text-center">
-        <p className="inline-flex items-center gap-2 text-xs text-slate-500">
-          <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-          Your hero evolves as your real-life actions become quests, progress becomes XP, and consistency becomes strength.
-        </p>
-      </div>
     </div>
   );
 }
 
 function HeroLoadingState() {
   return (
-    <div className="rounded-3xl border border-rpg-surface-border bg-rpg-surface/80 p-8 text-center shadow-xl backdrop-blur-md" role="status">
+    <div
+      className="rounded-3xl border border-rpg-surface-border bg-rpg-surface/80 p-8 text-center shadow-xl backdrop-blur-md"
+      role="status"
+    >
       <Sparkles className="mx-auto h-6 w-6 animate-pulse text-purple-300" />
-      <p className="mt-3 text-sm text-slate-400">Summoning your hero profile...</p>
+      <p className="mt-3 text-sm text-slate-400">Loading hero chronicle...</p>
     </div>
   );
 }

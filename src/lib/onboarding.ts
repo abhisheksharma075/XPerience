@@ -1,3 +1,5 @@
+import { SupabaseClient } from "@supabase/supabase-js";
+
 export type OnboardingData = {
   name: string;
   path: string;
@@ -50,9 +52,7 @@ export function getOnboardingData(): OnboardingData {
   }
 }
 
-export function saveOnboardingData(
-  data: Partial<OnboardingData>
-) {
+export function saveOnboardingData(data: Partial<OnboardingData>) {
   if (typeof window === "undefined") return;
 
   const current = getOnboardingData();
@@ -65,14 +65,172 @@ export function saveOnboardingData(
       : current.goals,
   };
 
-  sessionStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(updated)
-  );
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
 }
 
 export function clearOnboardingData() {
   if (typeof window === "undefined") return;
 
   sessionStorage.removeItem(STORAGE_KEY);
+}
+
+export const goalQuestTemplates: Record<
+  string,
+  {
+    title: string;
+    description: string;
+    xpReward: number;
+    goldReward: number;
+    difficulty: "easy" | "medium" | "hard";
+  }
+> = {
+  Fitness: {
+    title: "Daily Movement & Physical Training",
+    description:
+      "Complete 30 minutes of physical exercise or strength training to forge your vitality.",
+    xpReward: 100,
+    goldReward: 25,
+    difficulty: "easy",
+  },
+  Learning: {
+    title: "Intellectual Growth & Study",
+    description:
+      "Read or study a new topic for at least 25 minutes to expand your knowledge.",
+    xpReward: 100,
+    goldReward: 25,
+    difficulty: "easy",
+  },
+  "Mental Growth": {
+    title: "Mindfulness & Mental Fortitude",
+    description:
+      "Practice 15 minutes of meditation, deep focus, or journaling for mental clarity.",
+    xpReward: 75,
+    goldReward: 20,
+    difficulty: "easy",
+  },
+  Career: {
+    title: "Professional Deep Work Sprint",
+    description:
+      "Execute one focused work sprint with zero distractions to advance your career goals.",
+    xpReward: 120,
+    goldReward: 30,
+    difficulty: "medium",
+  },
+  Creativity: {
+    title: "Creative Crafting Session",
+    description:
+      "Create, write, design, or build something new for 30 minutes.",
+    xpReward: 100,
+    goldReward: 25,
+    difficulty: "easy",
+  },
+  Finance: {
+    title: "Financial Health & Budget Review",
+    description:
+      "Track daily expenses and align your spending with your long-term stability.",
+    xpReward: 80,
+    goldReward: 20,
+    difficulty: "easy",
+  },
+  Relationships: {
+    title: "Meaningful Connection & Check-in",
+    description:
+      "Reach out to a friend, family member, or colleague to nurture a real relationship.",
+    xpReward: 75,
+    goldReward: 20,
+    difficulty: "easy",
+  },
+  "Personal Growth": {
+    title: "Evening Reflection & Daily Debrief",
+    description:
+      "Reflect on wins, lessons, and tomorrow priorities to level up every single day.",
+    xpReward: 90,
+    goldReward: 25,
+    difficulty: "easy",
+  },
+};
+
+/**
+ * Synchronizes onboarding selections (hero name, path archetype, and goals)
+ * to the authenticated Supabase user's profile and quests table.
+ */
+export async function syncOnboardingToProfile(
+  supabase: SupabaseClient,
+  userId: string,
+  data?: Partial<OnboardingData>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const onboarding = data
+      ? { ...getOnboardingData(), ...data }
+      : getOnboardingData();
+
+    // 1. Update Profile Display Name & Archetype in profiles table
+    const profileUpdates: Record<string, unknown> = {};
+    if (onboarding.name && onboarding.name.trim()) {
+      profileUpdates.display_name = onboarding.name.trim();
+    }
+
+    // Set initial path attributes if chosen
+    if (onboarding.path === "Warrior") {
+      profileUpdates.strength = 4;
+      profileUpdates.vitality = 3;
+      profileUpdates.discipline = 2;
+      profileUpdates.intelligence = 1;
+    } else if (onboarding.path === "Sage") {
+      profileUpdates.intelligence = 4;
+      profileUpdates.discipline = 3;
+      profileUpdates.vitality = 2;
+      profileUpdates.strength = 1;
+    } else if (onboarding.path === "Creator") {
+      profileUpdates.discipline = 3;
+      profileUpdates.intelligence = 3;
+      profileUpdates.vitality = 2;
+      profileUpdates.strength = 2;
+    }
+
+    if (Object.keys(profileUpdates).length > 0) {
+      await supabase.from("profiles").update(profileUpdates).eq("id", userId);
+    }
+
+    // 2. Check existing quests and seed quests from chosen goals if empty
+    if (onboarding.goals && onboarding.goals.length > 0) {
+      const { data: existingQuests } = await supabase
+        .from("quests")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1);
+
+      if (!existingQuests || existingQuests.length === 0) {
+        const questsToInsert = onboarding.goals.map((goal) => {
+          const template = goalQuestTemplates[goal] || {
+            title: `Quest: ${goal}`,
+            description: `Work toward your personal goal in ${goal}.`,
+            xpReward: 100,
+            goldReward: 25,
+            difficulty: "easy" as const,
+          };
+
+          return {
+            user_id: userId,
+            title: template.title,
+            description: template.description,
+            xp_reward: template.xpReward,
+            gold_reward: template.goldReward,
+            difficulty: template.difficulty,
+            status: "active",
+          };
+        });
+
+        await supabase.from("quests").insert(questsToInsert);
+      }
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to sync onboarding to Supabase:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Unknown sync error",
+    };
+  }
 }

@@ -19,6 +19,7 @@ export {
   calculateLevelFromXP,
   calculateXPRequiredForLevel,
   calculateLevelProgress,
+  calculateStreakProgression,
   completeQuestWorkflow,
   type LevelProgress,
   type CharacterState,
