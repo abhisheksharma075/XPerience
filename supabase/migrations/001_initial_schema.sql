@@ -4,6 +4,9 @@
 -- Tables: profiles, quests, quest_completions, shop_items, inventory
 -- ==============================================================================
 
+-- Enable pgcrypto extension for gen_random_uuid() reproducibility across environments
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- 1. PROFILES TABLE
 -- Extends Supabase auth.users with RPG attributes, stats, and streaks
 CREATE TABLE IF NOT EXISTS profiles (
@@ -20,8 +23,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   vitality INTEGER NOT NULL DEFAULT 1 CHECK (vitality >= 1),
   current_streak INTEGER NOT NULL DEFAULT 0 CHECK (current_streak >= 0),
   longest_streak INTEGER NOT NULL DEFAULT 0 CHECK (longest_streak >= 0),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 2. QUESTS TABLE
@@ -36,8 +39,8 @@ CREATE TABLE IF NOT EXISTS quests (
   difficulty TEXT NOT NULL DEFAULT 'easy' CHECK (difficulty IN ('easy', 'medium', 'hard')),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'archived')),
   due_date TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 3. QUEST_COMPLETIONS TABLE
@@ -48,7 +51,7 @@ CREATE TABLE IF NOT EXISTS quest_completions (
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   xp_earned INTEGER NOT NULL DEFAULT 0 CHECK (xp_earned >= 0),
   gold_earned INTEGER NOT NULL DEFAULT 0 CHECK (gold_earned >= 0),
-  completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+  completed_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 4. SHOP_ITEMS TABLE
@@ -60,7 +63,7 @@ CREATE TABLE IF NOT EXISTS shop_items (
   price INTEGER NOT NULL DEFAULT 0 CHECK (price >= 0),
   item_type TEXT NOT NULL,
   is_active BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 5. INVENTORY TABLE
@@ -70,7 +73,7 @@ CREATE TABLE IF NOT EXISTS inventory (
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   item_id UUID NOT NULL REFERENCES shop_items(id) ON DELETE CASCADE,
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 1),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT uq_inventory_user_item UNIQUE (user_id, item_id)
 );
 
