@@ -1,241 +1,347 @@
 "use client";
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { ProgressBar } from "@/components/ui/ProgressBar";
-import { StatDisplay } from "@/components/ui/StatDisplay";
-import { QuestCard } from "@/components/ui/QuestCard";
-import { Quest } from "@/types/rpg";
-import { Sparkles, Sword, Flame, Coins, ShieldCheck } from "lucide-react";
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Flame,
+  Gamepad2,
+  Sparkles,
+  Sword,
+  Trophy,
+  Zap,
+} from "lucide-react";
 
-export default function ShowcasePage() {
-  const [btnLoading, setBtnLoading] = useState(false);
-
-  // Sample quests for UI testing and verification
-  const [quests, setQuests] = useState<Quest[]>([
-    {
-      id: "q-1",
-      title: "Master TypeScript Generics & Mapped Types",
-      description: "Dive into advanced type gymnastics to build indestructible frontend state contracts.",
-      difficulty: "hard",
-      attributeTarget: "intellect",
-      xpReward: 350,
-      goldReward: 85,
-      isCompleted: false,
-      dueDate: "Today",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "q-2",
-      title: "45-Minute Heavy Iron Workout",
-      description: "Compound lifts and core stability circuits to bolster physical fortitude.",
-      difficulty: "medium",
-      attributeTarget: "strength",
-      xpReward: 200,
-      goldReward: 45,
-      isCompleted: false,
-      dueDate: "Today",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "q-3",
-      title: "Hydrate & Drink 2L Elixir of Water",
-      description: "Keep vitality and mental clarity peaked throughout the hackathon grind.",
-      difficulty: "trivial",
-      attributeTarget: "vitality",
-      xpReward: 50,
-      goldReward: 15,
-      isCompleted: true,
-      dueDate: "Done",
-      createdAt: new Date().toISOString(),
-    },
-  ]);
-
-  const handleToggleQuest = (questId: string) => {
-    setQuests((prev) =>
-      prev.map((q) => (q.id === questId ? { ...q, isCompleted: !q.isCompleted } : q))
-    );
-  };
-
+export default function HomePage() {
   return (
-    <div className="space-y-10 pb-12">
-      {/* Hero Banner Header */}
-      <section className="relative overflow-hidden rounded-2xl border border-rpg-surface-border bg-gradient-to-br from-rpg-surface via-rpg-surface-subtle to-rpg-void p-6 sm:p-8 shadow-2xl">
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold tracking-wider uppercase font-mono">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            UI System & Navigation Foundation
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            XPerience <span className="text-rpg-gold">Design System</span>
-          </h1>
-          <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
-            Dark fantasy RPG interface primitives crafted for tactile satisfaction, accessible keyboard navigation, and seamless state-driven frontend workflows.
-          </p>
-        </div>
-      </section>
+    <main className="relative min-h-screen overflow-hidden bg-rpg-void text-white">
+      {/* Background Glow */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-[-180px] h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-purple-600/10 blur-[120px]" />
+        <div className="absolute right-[-100px] top-[35%] h-[350px] w-[350px] rounded-full bg-blue-600/10 blur-[120px]" />
+        <div className="absolute bottom-[10%] left-[-100px] h-[300px] w-[300px] rounded-full bg-amber-500/10 blur-[120px]" />
+      </div>
 
-      {/* Progress & Meter Primitives */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Flame className="w-5 h-5 text-purple-400" />
-          <h2 className="text-lg font-bold text-white tracking-wide uppercase font-mono">
-            Progression Bars
-          </h2>
-        </div>
-
-        <Card className="p-6 space-y-5">
-          <ProgressBar
-            label="Hero XP Progression (Level 7)"
-            value={1450}
-            max={2000}
-            variant="xp"
-            valueUnit="XP"
-            size="md"
-          />
-          <ProgressBar
-            label="Health Pool (Fortitude)"
-            value={380}
-            max={450}
-            variant="health"
-            valueUnit="HP"
-            size="md"
-          />
-          <ProgressBar
-            label="Arcane Mana (Focus)"
-            value={180}
-            max={220}
-            variant="mana"
-            valueUnit="MP"
-            size="md"
-          />
-        </Card>
-      </section>
-
-      {/* Reusable RPG Button Primitives */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Sword className="w-5 h-5 text-amber-400" />
-          <h2 className="text-lg font-bold text-white tracking-wide uppercase font-mono">
-            Tactile RPG Buttons
-          </h2>
-        </div>
-
-        <Card className="p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="primary" leftIcon={<Sword className="w-4 h-4" />}>
-              Accept Quest
-            </Button>
-
-            <Button variant="secondary" leftIcon={<Coins className="w-4 h-4 text-amber-400" />}>
-              Open Merchant
-            </Button>
-
-            <Button variant="mana" leftIcon={<Sparkles className="w-4 h-4" />}>
-              Cast Spell
-            </Button>
-
-            <Button variant="danger">
-              Surrender Task
-            </Button>
-
-            <Button variant="outline">
-              Inspect Codex
-            </Button>
-
-            <Button
-              variant="primary"
-              isLoading={btnLoading}
-              onClick={() => {
-                setBtnLoading(true);
-                setTimeout(() => setBtnLoading(false), 1500);
-              }}
-            >
-              Test Loading State
-            </Button>
-          </div>
-        </Card>
-      </section>
-
-      {/* Rarity & Attribute Badges */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-emerald-400" />
-          <h2 className="text-lg font-bold text-white tracking-wide uppercase font-mono">
-            Rarity & Attribute Badges
-          </h2>
-        </div>
-
-        <Card className="p-6 space-y-4">
-          <div>
-            <div className="text-xs text-slate-400 mb-2 font-mono uppercase">Item Rarity Tiers</div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="common">Common</Badge>
-              <Badge variant="uncommon">Uncommon</Badge>
-              <Badge variant="rare">Rare</Badge>
-              <Badge variant="epic">Epic</Badge>
-              <Badge variant="legendary">Legendary</Badge>
-              <Badge variant="mythic">Mythic</Badge>
+      {/* HERO SECTION */}
+      <section className="relative mx-auto flex min-h-[calc(100vh-80px)] max-w-6xl items-center px-5 py-20 sm:px-8">
+        <div className="grid w-full items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
+          
+          {/* LEFT SIDE */}
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="space-y-7"
+          >
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-amber-300">
+              <Sparkles className="h-4 w-4" />
+              Your Real Life. Your RPG.
             </div>
-          </div>
 
-          <div className="pt-3 border-t border-rpg-surface-border">
-            <div className="text-xs text-slate-400 mb-2 font-mono uppercase">Character Attribute Targets</div>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="strength">+Strength</Badge>
-              <Badge variant="intellect">+Intellect</Badge>
-              <Badge variant="vitality">+Vitality</Badge>
-              <Badge variant="agility">+Agility</Badge>
-              <Badge variant="focus">+Focus</Badge>
+            {/* Heading */}
+            <div>
+              <h1 className="text-5xl font-black leading-[0.95] tracking-tight sm:text-7xl">
+                Turn Your Life
+                <span className="block text-rpg-gold">
+                  Into an RPG.
+                </span>
+              </h1>
+
+              <p className="mt-6 max-w-xl text-base leading-7 text-slate-400 sm:text-lg">
+                XPerience transforms your real-world goals, habits and
+                achievements into quests. Earn XP, build your character and
+                level up your life — one quest at a time.
+              </p>
             </div>
-          </div>
-        </Card>
+
+            {/* Buttons */}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button className="group inline-flex items-center justify-center gap-2 rounded-xl bg-rpg-gold px-6 py-3.5 font-bold text-black shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5 hover:brightness-110">
+                <Sword className="h-5 w-5" />
+                Begin Your XPerience
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              </button>
+
+              <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-rpg-surface-border bg-rpg-surface/60 px-6 py-3.5 font-semibold text-slate-200 transition hover:border-purple-400/40 hover:bg-rpg-surface">
+                <Gamepad2 className="h-5 w-5 text-purple-400" />
+                Explore the Journey
+              </button>
+            </div>
+
+            {/* Features */}
+            <div className="flex flex-wrap gap-5 pt-2 text-xs text-slate-500">
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                Real-world quests
+              </span>
+
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                XP & progression
+              </span>
+
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                Personal growth
+              </span>
+            </div>
+          </motion.div>
+
+          {/* RIGHT SIDE - RPG CARD */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 25 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.15 }}
+            className="relative mx-auto w-full max-w-md"
+          >
+            <div className="absolute inset-8 rounded-full bg-purple-500/10 blur-3xl" />
+
+            <div className="relative overflow-hidden rounded-3xl border border-rpg-surface-border bg-rpg-surface/80 p-6 shadow-2xl backdrop-blur-xl">
+              
+              {/* PLAYER HEADER */}
+              <div className="flex items-center justify-between border-b border-rpg-surface-border pb-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-amber-400/30 bg-amber-400/10">
+                    <Sword className="h-6 w-6 text-amber-300" />
+                  </div>
+
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-slate-500">
+                      Current Hero
+                    </p>
+
+                    <h2 className="font-bold">
+                      The Beginner
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-xs text-slate-500">
+                    LEVEL
+                  </p>
+
+                  <p className="text-2xl font-black text-rpg-gold">
+                    07
+                  </p>
+                </div>
+              </div>
+
+              {/* XP BAR */}
+              <div className="mt-6">
+                <div className="mb-2 flex justify-between text-xs font-semibold">
+                  <span className="text-slate-400">
+                    EXPERIENCE
+                  </span>
+
+                  <span className="text-amber-300">
+                    1,450 / 2,000 XP
+                  </span>
+                </div>
+
+                <div className="h-3 overflow-hidden rounded-full bg-slate-800">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: "72.5%" }}
+                    transition={{
+                      duration: 1.2,
+                      delay: 0.5,
+                    }}
+                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-300"
+                  />
+                </div>
+              </div>
+
+              {/* STATS */}
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                <Stat
+                  icon={<Zap />}
+                  label="STRENGTH"
+                  value="24"
+                />
+
+                <Stat
+                  icon={<Sparkles />}
+                  label="FOCUS"
+                  value="28"
+                />
+
+                <Stat
+                  icon={<Flame />}
+                  label="STREAK"
+                  value="12d"
+                />
+              </div>
+
+              {/* ACTIVE QUEST */}
+              <div className="mt-6 rounded-2xl border border-purple-400/20 bg-purple-400/5 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-purple-300">
+                  <Trophy className="h-4 w-4" />
+                  Active Quest
+                </div>
+
+                <h3 className="mt-3 font-bold">
+                  Complete Your Morning Routine
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Start the day by completing your personal routine.
+                </p>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-sm font-bold text-amber-300">
+                    +100 XP
+                  </span>
+
+                  <span className="rounded-lg bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-300">
+                    READY
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
-      {/* Character Stat Displays */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-lg font-bold text-white tracking-wide uppercase font-mono">
-            Character Attributes
-          </h2>
-        </div>
+      {/* HOW IT WORKS */}
+      <section className="relative border-t border-rpg-surface-border px-5 py-20 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
+              Your Journey Begins Here
+            </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          <StatDisplay attribute="strength" value={24} bonus={3} />
-          <StatDisplay attribute="intellect" value={32} bonus={5} />
-          <StatDisplay attribute="vitality" value={19} />
-          <StatDisplay attribute="agility" value={16} bonus={1} />
-          <StatDisplay attribute="focus" value={28} bonus={4} />
-        </div>
-      </section>
-
-      {/* Interactive Quest Cards */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sword className="w-5 h-5 text-amber-400" />
-            <h2 className="text-lg font-bold text-white tracking-wide uppercase font-mono">
-              Quest Card Primitives (Interactive)
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+              Life becomes the game.
             </h2>
-          </div>
-          <span className="text-xs text-slate-400 font-mono">
-            Click checkmark to test complete state
-          </span>
-        </div>
 
-        <div className="grid grid-cols-1 gap-3">
-          {quests.map((quest) => (
-            <QuestCard
-              key={quest.id}
-              quest={quest}
-              onComplete={handleToggleQuest}
+            <p className="mt-4 text-slate-400">
+              Every small action counts. XPerience turns progress into
+              something you can see, feel and celebrate.
+            </p>
+          </div>
+
+          {/* THREE CARDS */}
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            
+            <Feature
+              number="01"
+              icon={<Sword />}
+              title="Choose Your Quests"
+              description="Turn your goals and daily habits into meaningful real-world missions."
             />
-          ))}
+
+            <Feature
+              number="02"
+              icon={<Zap />}
+              title="Earn XP"
+              description="Complete quests, build streaks and earn experience for every step forward."
+            />
+
+            <Feature
+              number="03"
+              icon={<Trophy />}
+              title="Level Up"
+              description="Watch your character grow as you grow. Unlock milestones and become your next version."
+            />
+          </div>
         </div>
       </section>
+
+      {/* FINAL CTA */}
+      <section className="relative px-5 py-24 text-center sm:px-8">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-amber-400/20 bg-gradient-to-b from-amber-400/10 to-transparent p-10 sm:p-16">
+          
+          <Sparkles className="mx-auto h-8 w-8 text-amber-300" />
+
+          <h2 className="mt-5 text-3xl font-black sm:text-5xl">
+            Become the hero of
+            <span className="block text-rpg-gold">
+              your own story.
+            </span>
+          </h2>
+
+          <p className="mx-auto mt-5 max-w-xl text-slate-400">
+            You don't need a new life. You just need a new way to experience
+            the one you're already living.
+          </p>
+
+          <button className="mt-8 inline-flex items-center gap-2 rounded-xl bg-rpg-gold px-7 py-3.5 font-bold text-black transition hover:brightness-110">
+            Start Your Journey
+            <ArrowRight className="h-5 w-5" />
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+/* STAT COMPONENT */
+
+function Stat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-rpg-surface-border bg-black/20 p-3 text-center">
+      <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center text-cyan-300">
+        {icon}
+      </div>
+
+      <p className="text-[9px] font-bold tracking-wider text-slate-500">
+        {label}
+      </p>
+
+      <p className="mt-1 font-black">
+        {value}
+      </p>
     </div>
+  );
+}
+
+/* FEATURE CARD */
+
+function Feature({
+  number,
+  icon,
+  title,
+  description,
+}: {
+  number: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <motion.div
+      whileHover={{ y: -5 }}
+      className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/60 p-6 transition hover:border-amber-400/20"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-400/10 text-amber-300">
+          {icon}
+        </div>
+
+        <span className="font-mono text-sm text-slate-600">
+          {number}
+        </span>
+      </div>
+
+      <h3 className="mt-6 text-lg font-bold">
+        {title}
+      </h3>
+
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        {description}
+      </p>
+    </motion.div>
   );
 }
