@@ -50,8 +50,6 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({ children }) =>
                 <kbd className="px-1.5 py-0.5 rounded bg-rpg-surface-elevated border border-rpg-surface-border text-slate-400 text-[10px]">Tab</kbd>
                 to navigate
               </span>
-              <span>•</span>
-              <span>Frontend Ready for Hackathon</span>
             </div>
           </div>
         </footer>
