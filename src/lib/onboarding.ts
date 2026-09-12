@@ -15,18 +15,32 @@ export function getOnboardingData(): OnboardingData {
     };
   }
 
-  const saved = sessionStorage.getItem(STORAGE_KEY);
-
-  if (!saved) {
-    return {
-      name: "",
-      path: "",
-      goals: [],
-    };
-  }
-
   try {
-    return JSON.parse(saved);
+    const saved = sessionStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      return {
+        name: "",
+        path: "",
+        goals: [],
+      };
+    }
+
+    const parsed = JSON.parse(saved);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {
+        name: "",
+        path: "",
+        goals: [],
+      };
+    }
+
+    return {
+      name: typeof parsed.name === "string" ? parsed.name : "",
+      path: typeof parsed.path === "string" ? parsed.path : "",
+      goals: Array.isArray(parsed.goals)
+        ? parsed.goals.filter((g: unknown): g is string => typeof g === "string")
+        : [],
+    };
   } catch {
     return {
       name: "",
@@ -43,9 +57,12 @@ export function saveOnboardingData(
 
   const current = getOnboardingData();
 
-  const updated = {
-    ...current,
-    ...data,
+  const updated: OnboardingData = {
+    name: typeof data.name === "string" ? data.name : current.name,
+    path: typeof data.path === "string" ? data.path : current.path,
+    goals: Array.isArray(data.goals)
+      ? data.goals.filter((g): g is string => typeof g === "string")
+      : current.goals,
   };
 
   sessionStorage.setItem(

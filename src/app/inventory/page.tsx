@@ -248,7 +248,7 @@ export default function InventoryPage() {
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-xl border border-rpg-surface-border bg-rpg-void/60 px-4 py-3 shadow-inner">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hero Level</span>
-              <p className="font-mono text-lg font-black text-white">Level 02</p>
+              <p className="font-mono text-lg font-black text-white">Level 01</p>
             </div>
             <div className="rounded-xl border border-rpg-surface-border bg-rpg-void/60 px-4 py-3 shadow-inner">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Capacity</span>

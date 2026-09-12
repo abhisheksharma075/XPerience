@@ -68,16 +68,20 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 
         {/* Quest Details */}
         <div
-          className="flex-1 min-w-0 cursor-pointer"
-          onClick={() => onSelect?.(quest)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onSelect?.(quest);
-            }
-          }}
+          className={cn("flex-1 min-w-0", onSelect && "cursor-pointer")}
+          onClick={onSelect ? () => onSelect(quest) : undefined}
+          role={onSelect ? "button" : undefined}
+          tabIndex={onSelect ? 0 : undefined}
+          onKeyDown={
+            onSelect
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelect(quest);
+                  }
+                }
+              : undefined
+          }
         >
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h4

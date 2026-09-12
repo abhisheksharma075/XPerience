@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getOnboardingData, saveOnboardingData } from "../../../lib/onboarding";
 
@@ -103,6 +104,8 @@ export default function GoalsPage() {
 
   // Save selected goals and continue to dashboard
   const handleContinue = () => {
+    if (selectedGoals.length === 0) return;
+
     saveOnboardingData({
       goals: selectedGoals,
     });
@@ -142,21 +145,21 @@ export default function GoalsPage() {
         >
           {/* LOGO */}
 
-          <div>
+          <Link href="/" className="cursor-pointer group">
             <div
               className="text-[25px] font-black
-              tracking-[-0.04em]"
+              tracking-[-0.04em] transition group-hover:text-white/90"
             >
               <span className="text-purple-400">X</span>PERIENCE
             </div>
 
             <div
               className="mt-[-2px] text-[9px]
-              tracking-[0.45em] text-white/40"
+              tracking-[0.45em] text-white/40 group-hover:text-white/60"
             >
               LIFE RPG
             </div>
-          </div>
+          </Link>
 
           {/* PROGRESS */}
 
@@ -296,6 +299,8 @@ export default function GoalsPage() {
         {/* ================= GOAL CARDS ================= */}
 
         <div
+          role="group"
+          aria-label="Choose your goals"
           className="mt-10 grid gap-5
           sm:grid-cols-2 lg:grid-cols-4"
         >
@@ -310,6 +315,9 @@ export default function GoalsPage() {
               <button
                 key={goal.name}
                 type="button"
+                role="checkbox"
+                aria-checked={isSelected}
+                aria-label={`${goal.name}: ${goal.description}`}
                 onClick={() => toggleGoal(goal.name)}
                 className={`group relative h-[315px]
                   overflow-hidden rounded-[24px]
@@ -595,10 +603,13 @@ export default function GoalsPage() {
           <button
             type="button"
             onClick={handleContinue}
+            disabled={selectedGoals.length === 0}
+            aria-disabled={selectedGoals.length === 0}
             className={`group relative overflow-hidden
               rounded-2xl border px-7 py-4
               text-base font-bold
               transition-all duration-300
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:border-white/15 disabled:hover:text-white/45
               ${
                 selectedGoals.length > 0
                   ? `

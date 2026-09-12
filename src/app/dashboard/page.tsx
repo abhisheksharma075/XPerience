@@ -44,10 +44,10 @@ const pathDetails: Record<string, PathDetails> = {
 };
 
 const startingStats = [
-  { name: "Strength", value: 1, icon: Dumbbell, color: "text-rose-300" },
-  { name: "Focus", value: 1, icon: Crosshair, color: "text-cyan-300" },
-  { name: "Creativity", value: 1, icon: WandSparkles, color: "text-fuchsia-300" },
-  { name: "Discipline", value: 1, icon: Target, color: "text-amber-300" },
+  { name: "Strength", value: 24, icon: Dumbbell, color: "text-rose-300" },
+  { name: "Focus", value: 31, icon: Crosshair, color: "text-cyan-300" },
+  { name: "Creativity", value: 28, icon: WandSparkles, color: "text-fuchsia-300" },
+  { name: "Discipline", value: 35, icon: Target, color: "text-amber-300" },
 ];
 
 export default function DashboardPage() {

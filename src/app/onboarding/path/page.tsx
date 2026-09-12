@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getOnboardingData, saveOnboardingData } from "@/lib/onboarding";
 
@@ -115,15 +116,15 @@ export default function PathPage() {
           items-center justify-between px-6 md:px-12"
         >
 
-          <div>
-            <div className="text-[25px] font-black tracking-[-0.04em]">
+          <Link href="/" className="cursor-pointer group">
+            <div className="text-[25px] font-black tracking-[-0.04em] transition group-hover:text-white/90">
               <span className="text-purple-400">X</span>PERIENCE
             </div>
 
-            <div className="mt-[-2px] text-[9px] tracking-[0.45em] text-white/40">
+            <div className="mt-[-2px] text-[9px] tracking-[0.45em] text-white/40 group-hover:text-white/60">
               LIFE RPG
             </div>
-          </div>
+          </Link>
 
           {/* Progress */}
 
@@ -227,7 +228,11 @@ export default function PathPage() {
 
         {/* ================= CARDS ================= */}
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
+        <div
+          role="radiogroup"
+          aria-label="Choose your hero path"
+          className="mt-12 grid gap-5 md:grid-cols-3"
+        >
 
           {paths.map((path) => {
 
@@ -242,6 +247,9 @@ export default function PathPage() {
               <button
                 key={path.name}
                 type="button"
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={`${path.name}: ${path.eyebrow}. ${path.description}`}
                 onClick={() => handlePathClick(path.name)}
                 className={`group relative h-[430px]
                   overflow-hidden rounded-[26px]
@@ -425,10 +433,13 @@ export default function PathPage() {
           <button
             type="button"
             onClick={handleContinue}
+            disabled={!selectedPath}
+            aria-disabled={!selectedPath}
             className={`group relative w-full overflow-hidden
               rounded-2xl border px-8 py-5
               text-lg font-bold
               transition-all duration-300
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:border-white/10 disabled:hover:text-white/50
               ${
                 selectedPath
                   ? `

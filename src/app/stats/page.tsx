@@ -239,12 +239,12 @@ export default function StatsPage() {
             </div>
           </div>
 
-          {/* Presentational Level 2 Baseline Box */}
+          {/* Presentational Level 1 Baseline Box */}
           <div className="w-full md:max-w-xs rounded-xl border border-rpg-surface-border bg-rpg-void/60 p-4 shadow-inner">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider text-white">
                 <Sparkles className="h-3.5 w-3.5 text-rpg-gold" />
-                Level 02
+                Level 01
               </div>
               <div className="font-mono text-xs font-bold text-rpg-gold">
                 0 <span className="text-slate-500">/</span> <span className="text-slate-400">100 XP</span>

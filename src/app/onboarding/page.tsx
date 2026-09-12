@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getOnboardingData, saveOnboardingData } from "@/lib/onboarding";
 
@@ -72,6 +73,15 @@ export default function OnboardingPage() {
             Continue ⚔️
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-white/40 transition hover:text-white/80"
+          >
+            <span>← Back to Home</span>
+          </Link>
+        </div>
 
       </div>
     </main>

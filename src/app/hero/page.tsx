@@ -241,7 +241,7 @@ export default function HeroPage() {
                   </div>
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hero Rank</span>
-                    <p className="font-mono text-xs font-black uppercase text-white">Level 02</p>
+                    <p className="font-mono text-xs font-black uppercase text-white">Level 01</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -264,7 +264,7 @@ export default function HeroPage() {
               </div>
               <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-500">
                 <span>Tier 1 Baseline</span>
-                <span>Next Milestone: Level 3</span>
+                <span>Next Milestone: Level 2</span>
               </div>
             </div>
           </div>
@@ -277,7 +277,7 @@ export default function HeroPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <div className="rounded-2xl border border-rpg-surface-border bg-rpg-surface/80 p-4 backdrop-blur-md">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Level</span>
-            <p className="mt-1 font-mono text-2xl font-black text-white">02</p>
+            <p className="mt-1 font-mono text-2xl font-black text-white">01</p>
             <span className="text-[10px] text-purple-300">Active Tier</span>
           </div>
 

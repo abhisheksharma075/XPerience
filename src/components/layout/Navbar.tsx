@@ -62,9 +62,10 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Crest & Logo */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 lg:gap-6">
             <Link
               href="/"
+              onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rpg-gold focus-visible:ring-offset-2 focus-visible:ring-offset-rpg-void rounded-lg"
             >
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 via-amber-600 to-yellow-700 p-0.5 shadow-gold-glow flex items-center justify-center transition-transform group-hover:scale-105">
@@ -83,7 +84,7 @@ export const Navbar: React.FC = () => {
             </Link>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center space-x-1" aria-label="Main Navigation">
+            <nav className="hidden md:flex items-center space-x-0.5 lg:space-x-1" aria-label="Main Navigation">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -93,7 +94,7 @@ export const Navbar: React.FC = () => {
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "relative px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider flex items-center gap-2 transition-all duration-150",
+                      "relative px-2.5 lg:px-3.5 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 lg:gap-2 transition-all duration-150",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rpg-gold focus-visible:ring-offset-2 focus-visible:ring-offset-rpg-void",
                       isActive
                         ? "text-rpg-gold bg-rpg-surface-elevated/80 shadow-[inset_0_1px_0_rgba(212,175,55,0.4)]"
@@ -115,7 +116,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Character Quick HUD (Level, Gold, Streak) */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 lg:gap-3">
             {/* Level Badge */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-950/40 border border-purple-500/40 text-purple-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(168,85,247,0.2)]">
               <span className="text-[10px] text-purple-400 font-sans uppercase">LVL</span>
@@ -123,13 +124,13 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Gold Pill */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-950/40 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(245,158,11,0.2)]">
               <Coins className="w-3.5 h-3.5 text-amber-400" />
               <span>0</span>
             </div>
 
             {/* Streak Pill */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(244,63,94,0.2)]">
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-mono font-bold shadow-[0_0_10px_rgba(244,63,94,0.2)]">
               <Flame className="w-3.5 h-3.5 text-rose-400" />
               <span>0d</span>
             </div>
