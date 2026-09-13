@@ -135,7 +135,7 @@ Node.js
 npm
 A Supabase project
 1. Clone the repository
-git clone https://github.com/abhisheks.../XPerience.git
+git clone https://github.com/abhisheksharma075/XPerience
 cd XPerience
 
 
