@@ -3,6 +3,7 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import { Navbar } from "./Navbar";
+import { PlayerProvider } from "@/context/PlayerContext";
 
 export interface NavigationShellProps {
   children: React.ReactNode;
@@ -13,7 +14,8 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({ children }) =>
   const isOnboardingChapter = pathname === "/onboarding/path" || pathname === "/onboarding/goals";
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-rpg-void text-slate-200 overflow-x-hidden selection:bg-rpg-gold selection:text-rpg-void">
+    <PlayerProvider>
+      <div className="relative min-h-screen flex flex-col bg-rpg-void text-slate-200 overflow-x-hidden selection:bg-rpg-gold selection:text-rpg-void">
       {/* Ambient Fantasy Vignette & Radial Light Effects */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-amber-500/10 via-purple-600/5 to-transparent blur-3xl rounded-full" />
@@ -55,5 +57,6 @@ export const NavigationShell: React.FC<NavigationShellProps> = ({ children }) =>
         </footer>
       )}
     </div>
+    </PlayerProvider>
   );
 };

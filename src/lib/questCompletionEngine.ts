@@ -81,6 +81,22 @@ export async function completeQuestWorkflow(
 
     if (!rpcError && rpcData && rpcData.success) {
       const state = rpcData.character_state;
+
+      // Broadcast authoritative RPG state update to Navbar and UI
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('xperience:rpg-sync', {
+            detail: {
+              level: state.level,
+              xp: state.xp,
+              gold: state.gold,
+              currentStreak: state.current_streak,
+              longestStreak: state.longest_streak,
+            },
+          })
+        );
+      }
+
       return {
         result: {
           success: true,
@@ -264,6 +280,20 @@ export async function completeQuestWorkflow(
     }
 
     // Step 10: Return complete updated character state
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('xperience:rpg-sync', {
+          detail: {
+            level: updatedProfile.level,
+            xp: updatedProfile.xp,
+            gold: updatedProfile.gold,
+            currentStreak: updatedProfile.current_streak,
+            longestStreak: updatedProfile.longest_streak,
+          },
+        })
+      );
+    }
+
     return {
       result: {
         success: true,

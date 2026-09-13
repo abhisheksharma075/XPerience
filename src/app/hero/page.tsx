@@ -24,6 +24,7 @@ import { calculateLevelProgress } from "@/lib/levelSystem";
 import { getQuests } from "@/lib/quests";
 import { getOnboardingData, saveOnboardingData } from "@/lib/onboarding";
 import { updateProfile } from "@/lib/profile";
+import { broadcastRpgSync } from "@/context/PlayerContext";
 
 type PathDetails = {
   name: string;
@@ -235,6 +236,7 @@ export default function HeroPage() {
       });
 
       setEditSuccess("Character profile saved!");
+      broadcastRpgSync({ displayName: editDisplayName });
       setTimeout(() => {
         setIsEditModalOpen(false);
         setEditSuccess(null);

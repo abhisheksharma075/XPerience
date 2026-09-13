@@ -17,9 +17,7 @@ import {
   Coins,
   LogOut,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { calculateLevelProgress } from "@/lib/levelSystem";
-import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
+import { usePlayerStats } from "@/context/PlayerContext";
 
 interface NavItem {
   name: string;
@@ -40,12 +38,14 @@ export const Navbar: React.FC = () => {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Live Supabase HUD & Auth state
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [displayName, setDisplayName] = useState<string>("Adventurer");
-  const [level, setLevel] = useState<number | null>(null);
-  const [gold, setGold] = useState<number | null>(null);
-  const [streak, setStreak] = useState<number | null>(null);
+  // Single authoritative player state shared with the entire application
+  const { stats, signOut } = usePlayerStats();
+
+  const user = stats.id ? { id: stats.id, email: stats.email || undefined } : null;
+  const displayName = stats.displayName;
+  const level = stats.level;
+  const gold = stats.gold;
+  const streak = stats.currentStreak;
 
   // Close mobile drawer when route changes or user hits Escape
   useEffect(() => {
@@ -60,77 +60,8 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Fetch live character status & subscribe to auth state (mount once)
-  useEffect(() => {
-    let isMounted = true;
-    const supabase = createClient();
-
-    async function loadProfileForUser(userId: string, email?: string) {
-      try {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("display_name, xp, gold, current_streak")
-          .eq("id", userId)
-          .maybeSingle();
-
-        if (!isMounted) return;
-
-        if (profile) {
-          const progress = calculateLevelProgress(profile.xp || 0);
-          setLevel(progress.currentLevel);
-          setGold(profile.gold || 0);
-          setStreak(profile.current_streak || 0);
-          setDisplayName(
-            profile.display_name ||
-              email?.split("@")[0] ||
-              "Hero"
-          );
-        } else if (email) {
-          setDisplayName(email.split("@")[0] || "Hero");
-        }
-      } catch (err) {
-        console.error("Navbar profile load error:", err);
-      }
-    }
-
-    // Fast initial check from cached session
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
-      if (!isMounted) return;
-      if (session?.user) {
-        setUser(session.user);
-        loadProfileForUser(session.user.id, session.user.email);
-      } else {
-        setUser(null);
-      }
-    });
-
-    // Listen for auth changes (sign in, sign out, token refresh)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      if (!isMounted) return;
-      if (session?.user) {
-        setUser(session.user);
-        loadProfileForUser(session.user.id, session.user.email);
-      } else {
-        setUser(null);
-        setLevel(null);
-        setGold(null);
-        setStreak(null);
-        setDisplayName("Adventurer");
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setUser(null);
+    await signOut();
     router.push("/login");
     router.refresh();
   };

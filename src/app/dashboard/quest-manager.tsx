@@ -12,6 +12,7 @@ import {
   deleteQuest,
 } from '@/lib/quests';
 import { completeQuestWorkflow } from '@/lib/questCompletionEngine';
+import { broadcastRpgSync } from '@/context/PlayerContext';
 
 interface QuestManagerProps {
   initialQuests: Quest[];
@@ -191,6 +192,15 @@ export default function QuestManager({ initialQuests, userId }: QuestManagerProp
         setRewardNotification(
           `🎉 Quest Completed! Earned +${result.xpEarned} XP and +${result.goldEarned} Gold.${streakMsg}`
         );
+
+        // Instantly synchronize Top Navbar and application HUD
+        broadcastRpgSync({
+          level: result.characterState.level,
+          xp: result.characterState.xp,
+          gold: result.characterState.gold,
+          currentStreak: result.characterState.currentStreak,
+        });
+
         router.refresh();
       }
     } else {

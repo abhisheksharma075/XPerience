@@ -29,6 +29,7 @@ import {
   ShopItem,
 } from "@/lib/shop";
 import { getOnboardingData } from "@/lib/onboarding";
+import { broadcastRpgSync } from "@/context/PlayerContext";
 
 type PathDetails = {
   name: string;
@@ -183,6 +184,7 @@ export default function InventoryPage() {
 
     if (result) {
       setUserGold(result.newGold);
+      broadcastRpgSync({ gold: result.newGold });
       // Refresh inventory
       const { inventory: updatedInv } = await getUserInventory(supabase, userId);
       if (updatedInv) {

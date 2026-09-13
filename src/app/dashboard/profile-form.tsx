@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Profile, updateProfile } from '@/lib/profile';
+import { broadcastRpgSync } from '@/context/PlayerContext';
 
 interface ProfileFormProps {
   initialProfile: Profile;
@@ -45,6 +46,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
       }
 
       setSuccess('Profile updated successfully!');
+      broadcastRpgSync({ displayName });
       setLoading(false);
       router.refresh();
     } catch (err) {

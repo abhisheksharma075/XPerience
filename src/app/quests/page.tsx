@@ -30,6 +30,7 @@ import {
 } from "@/lib/quests";
 import { completeQuestWorkflow } from "@/lib/questCompletionEngine";
 import { calculateLevelProgress } from "@/lib/levelSystem";
+import { broadcastRpgSync } from "@/context/PlayerContext";
 
 const goalImages: Record<string, string> = {
   Fitness: "/images/fitness.png",
@@ -230,6 +231,14 @@ export default function QuestsPage() {
         setCurrentXp(progress.currentLevelXp);
         setGold(result.characterState.gold);
         setStreak(result.characterState.currentStreak);
+
+        // Instantly synchronize Top Navbar and entire application
+        broadcastRpgSync({
+          level: result.characterState.level,
+          xp: result.characterState.xp,
+          gold: result.characterState.gold,
+          currentStreak: result.characterState.currentStreak,
+        });
 
         // Trigger Level-up modal if level increased
         if (result.characterState.level > oldLevel) {

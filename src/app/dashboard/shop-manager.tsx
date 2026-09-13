@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ShopItem, purchaseShopItem } from '@/lib/shop';
+import { broadcastRpgSync } from '@/context/PlayerContext';
 
 interface ShopManagerProps {
   initialItems: ShopItem[];
@@ -57,6 +58,7 @@ export default function ShopManager({
       }
 
       setGold(result.newGold);
+      broadcastRpgSync({ gold: result.newGold });
       setNotification(
         `🎉 Purchased 1x ${result.itemName}! Added to inventory. Remaining Gold: ${result.newGold} G.`
       );
