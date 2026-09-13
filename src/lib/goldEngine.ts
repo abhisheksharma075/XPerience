@@ -127,7 +127,7 @@ export async function awardGold(
       .from('profiles')
       .select('gold')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileErr || !profile) {
       return { result: null, error: profileErr?.message || 'Profile not found' };
@@ -143,7 +143,7 @@ export async function awardGold(
       })
       .eq('id', userId)
       .select('gold')
-      .single();
+      .maybeSingle();
 
     if (updateErr || !updatedProfile) {
       return { result: null, error: updateErr?.message || 'Failed to update gold balance' };
@@ -234,7 +234,7 @@ export async function deductGold(
       .from('profiles')
       .select('gold')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileErr || !profile) {
       return { result: null, error: profileErr?.message || 'Profile not found' };
@@ -257,7 +257,7 @@ export async function deductGold(
       })
       .eq('id', userId)
       .select('gold')
-      .single();
+      .maybeSingle();
 
     if (updateErr || !updatedProfile) {
       return { result: null, error: updateErr?.message || 'Failed to deduct gold balance' };

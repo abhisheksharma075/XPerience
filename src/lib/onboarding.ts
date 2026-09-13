@@ -160,36 +160,94 @@ export async function syncOnboardingToProfile(
   data?: Partial<OnboardingData>
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Verify authenticated user from session or getUser
+    let user: { id: string; email?: string } | null = null;
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      user = sessionData.session.user;
+    } else {
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (!authError && userData?.user) {
+        user = userData.user;
+      }
+    }
+
+    if (!user || user.id !== userId) {
+      // Defer sync until an authenticated session is established
+      return { success: false, error: "User is not authenticated" };
+    }
+
     const onboarding = data
       ? { ...getOnboardingData(), ...data }
       : getOnboardingData();
 
-    // 1. Update Profile Display Name & Archetype in profiles table
-    const profileUpdates: Record<string, unknown> = {};
-    if (onboarding.name && onboarding.name.trim()) {
-      profileUpdates.display_name = onboarding.name.trim();
-    }
+    // Determine path attributes
+    let strength = 1;
+    let intelligence = 1;
+    let discipline = 1;
+    let vitality = 1;
 
-    // Set initial path attributes if chosen
     if (onboarding.path === "Warrior") {
-      profileUpdates.strength = 4;
-      profileUpdates.vitality = 3;
-      profileUpdates.discipline = 2;
-      profileUpdates.intelligence = 1;
+      strength = 4;
+      vitality = 3;
+      discipline = 2;
+      intelligence = 1;
     } else if (onboarding.path === "Sage") {
-      profileUpdates.intelligence = 4;
-      profileUpdates.discipline = 3;
-      profileUpdates.vitality = 2;
-      profileUpdates.strength = 1;
+      intelligence = 4;
+      discipline = 3;
+      vitality = 2;
+      strength = 1;
     } else if (onboarding.path === "Creator") {
-      profileUpdates.discipline = 3;
-      profileUpdates.intelligence = 3;
-      profileUpdates.vitality = 2;
-      profileUpdates.strength = 2;
+      discipline = 3;
+      intelligence = 3;
+      vitality = 2;
+      strength = 2;
     }
 
-    if (Object.keys(profileUpdates).length > 0) {
-      await supabase.from("profiles").update(profileUpdates).eq("id", userId);
+    // Check existing profile in a single fast query
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const defaultUsername = user.email
+      ? `${user.email.split("@")[0]}_${user.id.slice(0, 4)}`
+      : `player_${user.id.slice(0, 6)}`;
+    const displayName = onboarding.name?.trim() || user.email?.split("@")[0] || "Player";
+
+    if (!existingProfile) {
+      // Single consolidated upsert
+      await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          username: defaultUsername,
+          display_name: displayName,
+          xp: 0,
+          level: 1,
+          gold: 0,
+          strength,
+          intelligence,
+          discipline,
+          vitality,
+        },
+        { onConflict: "id" }
+      );
+    } else {
+      // Update display name and archetype stats if custom
+      const updates: Record<string, unknown> = {};
+      if (onboarding.name && onboarding.name.trim()) {
+        updates.display_name = onboarding.name.trim();
+      }
+      if (onboarding.path) {
+        updates.strength = strength;
+        updates.intelligence = intelligence;
+        updates.discipline = discipline;
+        updates.vitality = vitality;
+      }
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("profiles").update(updates).eq("id", user.id);
+      }
     }
 
     // 2. Check existing quests and seed quests from chosen goals if empty
@@ -197,7 +255,7 @@ export async function syncOnboardingToProfile(
       const { data: existingQuests } = await supabase
         .from("quests")
         .select("id")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .limit(1);
 
       if (!existingQuests || existingQuests.length === 0) {
@@ -211,7 +269,7 @@ export async function syncOnboardingToProfile(
           };
 
           return {
-            user_id: userId,
+            user_id: user.id,
             title: template.title,
             description: template.description,
             xp_reward: template.xpReward,
@@ -221,7 +279,13 @@ export async function syncOnboardingToProfile(
           };
         });
 
-        await supabase.from("quests").insert(questsToInsert);
+        const { error: questInsertError } = await supabase
+          .from("quests")
+          .insert(questsToInsert);
+
+        if (questInsertError) {
+          console.warn("Could not insert starter quests during sync:", questInsertError.message);
+        }
       }
     }
 

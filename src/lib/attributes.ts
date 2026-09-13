@@ -251,10 +251,14 @@ export async function updateAttributes(
       .update(payload)
       .eq('id', userId)
       .select('strength, intelligence, discipline, vitality')
-      .single();
+      .maybeSingle();
 
     if (error) {
       return { attributes: null, error: error.message };
+    }
+
+    if (!data) {
+      return { attributes: null, error: 'Character profile not found.' };
     }
 
     return {

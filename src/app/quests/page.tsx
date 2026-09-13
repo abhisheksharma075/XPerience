@@ -15,6 +15,7 @@ import {
   Play,
   Sparkles,
   Plus,
+  Pencil,
   Coins,
   Flame,
   X,
@@ -66,6 +67,7 @@ export default function QuestsPage() {
     xp: number;
     gold: number;
   } | null>(null);
+  const [actionErrorToast, setActionErrorToast] = useState<string | null>(null);
 
   // New Quest Creation Modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -77,6 +79,55 @@ export default function QuestsPage() {
   const [newXpReward, setNewXpReward] = useState<number>(50);
   const [newGoldReward, setNewGoldReward] = useState<number>(20);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Edit Quest Modal
+  const [editingQuest, setEditingQuest] = useState<DbQuest | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editDifficulty, setEditDifficulty] = useState<"easy" | "medium" | "hard">("easy");
+  const [editXpReward, setEditXpReward] = useState<number>(50);
+  const [editGoldReward, setEditGoldReward] = useState<number>(20);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const handleOpenEdit = (quest: DbQuest) => {
+    setEditingQuest(quest);
+    setEditTitle(quest.title);
+    setEditDescription(quest.description || "");
+    setEditDifficulty(quest.difficulty);
+    setEditXpReward(quest.xp_reward);
+    setEditGoldReward(quest.gold_reward);
+    setEditError(null);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingQuest(null);
+    setEditError(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingQuest || !editTitle.trim()) return;
+
+    setEditError(null);
+    const supabase = createClient();
+    const { quest: updated, error } = await updateQuest(supabase, editingQuest.id, {
+      title: editTitle.trim(),
+      description: editDescription.trim() || null,
+      difficulty: editDifficulty,
+      xp_reward: Number(editXpReward),
+      gold_reward: Number(editGoldReward),
+    });
+
+    if (error) {
+      setEditError(error);
+      return;
+    }
+
+    if (updated) {
+      setQuests((prev) => prev.map((q) => (q.id === updated.id ? updated : q)));
+      handleCloseEdit();
+    }
+  };
 
   // Fetch real user, profile, and quests from Supabase
   useEffect(() => {
@@ -94,12 +145,15 @@ export default function QuestsPage() {
 
         setUserId(user.id);
 
-        // Fetch profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
+        // Fetch profile and quests concurrently in parallel
+        const [{ data: profile }, { quests: dbQuests }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle(),
+          getQuests(supabase, user.id),
+        ]);
 
         if (profile) {
           const progress = calculateLevelProgress(profile.xp || 0);
@@ -109,8 +163,6 @@ export default function QuestsPage() {
           setStreak(profile.current_streak || 0);
         }
 
-        // Fetch user quests
-        const { quests: dbQuests } = await getQuests(supabase, user.id);
         if (dbQuests) {
           setQuests(dbQuests);
         }
@@ -146,6 +198,8 @@ export default function QuestsPage() {
 
       if (error || !result) {
         console.error("Failed to complete quest:", error);
+        setActionErrorToast(error || "Failed to complete quest.");
+        setTimeout(() => setActionErrorToast(null), 4000);
         return;
       }
 
@@ -196,12 +250,25 @@ export default function QuestsPage() {
 
   const handleCreateQuest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !userId) return;
+    if (!newTitle.trim()) return;
 
     setCreateError(null);
     const supabase = createClient();
 
-    const { quest, error } = await createQuest(supabase, userId, {
+    const { data: sessionData } = await supabase.auth.getSession();
+    let currentUserId = sessionData?.session?.user?.id;
+    if (!currentUserId) {
+      const { data: userData } = await supabase.auth.getUser();
+      currentUserId = userData?.user?.id;
+    }
+
+    if (!currentUserId) {
+      setCreateError("Your session has expired. Please sign in again.");
+      router.push("/login?redirectedFrom=/quests");
+      return;
+    }
+
+    const { quest, error } = await createQuest(supabase, currentUserId, {
       title: newTitle.trim(),
       description: newDescription.trim() || null,
       difficulty: newDifficulty,
@@ -237,6 +304,50 @@ export default function QuestsPage() {
 
   return (
     <div className="space-y-7 pb-8 sm:space-y-8">
+      {/* Floating Reward Toast */}
+      <AnimatePresence>
+        {rewardToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="fixed top-20 right-6 z-50 rounded-2xl border border-rpg-gold/50 bg-rpg-surface/95 p-4 shadow-gold-glow backdrop-blur-xl flex items-center gap-3 text-white"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rpg-gold/20 text-rpg-gold">
+              <Sparkles className="h-5 w-5 animate-spin" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-rpg-gold uppercase tracking-wider">
+                Quest Completed!
+              </p>
+              <p className="text-xs text-slate-300 font-mono">
+                +{rewardToast.xp} XP &bull; +{rewardToast.gold} G
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Action Error Toast */}
+      <AnimatePresence>
+        {actionErrorToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            className="fixed top-20 right-6 z-50 rounded-2xl border border-rose-500/50 bg-rose-950/95 p-4 shadow-xl backdrop-blur-xl flex items-center gap-3 text-rose-200 text-xs font-semibold max-w-sm"
+          >
+            <span>{actionErrorToast}</span>
+            <button
+              onClick={() => setActionErrorToast(null)}
+              className="text-rose-400 hover:text-white font-bold ml-auto"
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Level Up Celebration Modal */}
       <AnimatePresence>
         {levelUpEvent?.show && (
@@ -424,6 +535,142 @@ export default function QuestsPage() {
                   >
                     <Plus className="h-4 w-4" />
                     Forge Quest
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {editingQuest && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-lg rounded-3xl border border-rpg-surface-border bg-rpg-surface/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8"
+            >
+              <div className="flex items-center justify-between border-b border-rpg-surface-border pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/20 border border-purple-400/40 text-purple-300">
+                    <Pencil className="h-4 w-4" />
+                  </div>
+                  <h3 className="text-lg font-black text-white">
+                    Edit Quest
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseEdit}
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-white/5 hover:text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {editError && (
+                <div className="mt-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-300">
+                  {editError}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveEdit} className="mt-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                    Quest Title
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    placeholder="e.g. Read 20 pages of non-fiction"
+                    className="mt-1.5 w-full rounded-xl border border-rpg-surface-border bg-black/30 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-rpg-gold focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                    Description & Rules
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="Details about what counts as completing this quest..."
+                    className="mt-1.5 w-full rounded-xl border border-rpg-surface-border bg-black/30 px-4 py-2.5 text-sm text-white placeholder:text-slate-500 focus:border-rpg-gold focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                      Difficulty
+                    </label>
+                    <select
+                      value={editDifficulty}
+                      onChange={(e) =>
+                        setEditDifficulty(
+                          e.target.value as "easy" | "medium" | "hard"
+                        )
+                      }
+                      className="mt-1.5 w-full rounded-xl border border-rpg-surface-border bg-black/30 px-3 py-2 text-sm text-white focus:border-rpg-gold focus:outline-none"
+                    >
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                      XP Reward
+                    </label>
+                    <input
+                      type="number"
+                      min={10}
+                      max={500}
+                      value={editXpReward}
+                      onChange={(e) => setEditXpReward(Number(e.target.value))}
+                      className="mt-1.5 w-full rounded-xl border border-rpg-surface-border bg-black/30 px-3 py-2 text-sm text-white focus:border-rpg-gold focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                      Gold Reward
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={editGoldReward}
+                      onChange={(e) =>
+                        setEditGoldReward(Number(e.target.value))
+                      }
+                      className="mt-1.5 w-full rounded-xl border border-rpg-surface-border bg-black/30 px-3 py-2 text-sm text-white focus:border-rpg-gold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-rpg-surface-border">
+                  <button
+                    type="button"
+                    onClick={handleCloseEdit}
+                    className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-xl bg-rpg-gold px-5 py-2.5 text-xs font-bold text-rpg-void shadow-gold-glow transition hover:brightness-110"
+                  >
+                    Save Changes
                   </button>
                 </div>
               </form>
@@ -669,6 +916,20 @@ export default function QuestsPage() {
                             <Check className="h-3 w-3 stroke-[2.5]" />
                             Completed
                           </span>
+                        )}
+                        {!isCompleted && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEdit(quest);
+                            }}
+                            aria-label={`Edit ${quest.title}`}
+                            className="rounded-lg p-1 text-slate-400 hover:text-rpg-gold hover:bg-white/5 transition-colors"
+                            title="Edit Quest"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
                         )}
                       </div>
                     </div>

@@ -54,22 +54,22 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 md:p-8 shadow-sm">
-      <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+    <div id="edit-character" className="rounded-3xl border border-rpg-surface-border bg-rpg-surface/90 p-6 md:p-8 shadow-xl backdrop-blur-md scroll-mt-24">
+      <h2 className="text-xl font-bold tracking-tight text-white">
         Edit Character Profile
       </h2>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-        Update your character identity and public avatar.
+      <p className="mt-1 text-xs text-slate-400">
+        Update your hero identity and public avatar seal.
       </p>
 
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-950/40 p-3.5 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-400">
+        <div className="mt-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs text-rose-300">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="mt-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 p-3.5 border border-emerald-200 dark:border-emerald-900 text-sm text-emerald-700 dark:text-emerald-300">
+        <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3.5 text-xs text-emerald-300">
           {success}
         </div>
       )}
@@ -78,7 +78,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
         <div>
           <label
             htmlFor="displayName"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-300"
           >
             Display Name
           </label>
@@ -88,7 +88,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
             required
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:border-zinc-400 text-sm"
+            className="mt-1.5 block w-full rounded-xl border border-rpg-surface-border bg-black/40 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rpg-gold focus:outline-none"
             placeholder="e.g. Shadow Knight"
           />
         </div>
@@ -96,9 +96,9 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
         <div>
           <label
             htmlFor="username"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-300"
           >
-            Username
+            Hero Username
           </label>
           <input
             id="username"
@@ -106,7 +106,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
             required
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:border-zinc-400 text-sm"
+            className="mt-1.5 block w-full rounded-xl border border-rpg-surface-border bg-black/40 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rpg-gold focus:outline-none"
             placeholder="e.g. shadow_knight"
           />
         </div>
@@ -114,7 +114,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
         <div>
           <label
             htmlFor="avatarUrl"
-            className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-300"
           >
             Avatar URL
           </label>
@@ -123,7 +123,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
             type="url"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-950 dark:focus:border-zinc-400 text-sm"
+            className="mt-1.5 block w-full rounded-xl border border-rpg-surface-border bg-black/40 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rpg-gold focus:outline-none"
             placeholder="https://example.com/avatar.png"
           />
         </div>
@@ -131,7 +131,7 @@ export default function ProfileForm({ initialProfile }: ProfileFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex justify-center rounded-lg py-2.5 px-5 text-sm font-semibold text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 disabled:opacity-50 transition-colors"
+          className="inline-flex justify-center rounded-xl bg-rpg-gold py-2.5 px-5 text-xs font-bold text-rpg-void shadow-gold-glow transition hover:brightness-110 disabled:opacity-50"
         >
           {loading ? 'Saving Changes...' : 'Save Character Profile'}
         </button>

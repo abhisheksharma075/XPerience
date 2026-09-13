@@ -14,12 +14,16 @@ import {
   Swords,
   User,
   Zap,
+  Pencil,
+  X,
+  Check,
 } from "lucide-react";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { createClient } from "@/lib/supabase/client";
 import { calculateLevelProgress } from "@/lib/levelSystem";
 import { getQuests } from "@/lib/quests";
-import { getOnboardingData } from "@/lib/onboarding";
+import { getOnboardingData, saveOnboardingData } from "@/lib/onboarding";
+import { updateProfile } from "@/lib/profile";
 
 type PathDetails = {
   name: string;
@@ -91,14 +95,27 @@ const heroLoadout = [
 export default function HeroPage() {
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const [heroName, setHeroName] = useState("Hero");
+  const [username, setUsername] = useState("hero");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [pathName, setPathName] = useState("Warrior");
   const [level, setLevel] = useState(1);
   const [xp, setXp] = useState(0);
   const [gold, setGold] = useState(0);
   const [activeQuestsCount, setActiveQuestsCount] = useState(0);
   const [completedQuestsCount, setCompletedQuestsCount] = useState(0);
+
+  // Edit Character Modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editPath, setEditPath] = useState("Warrior");
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadHeroData() {
@@ -113,21 +130,36 @@ export default function HeroPage() {
           return;
         }
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
+        setUserId(user.id);
+
+        // Fetch profile and quests concurrently in parallel
+        const [{ data: profile }, { quests }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle(),
+          getQuests(supabase, user.id),
+        ]);
 
         const onboarding = getOnboardingData();
 
         if (profile) {
-          setHeroName(
+          const resolvedName =
             profile.display_name ||
-              onboarding.name ||
-              user.email?.split("@")[0] ||
-              "Hero"
-          );
+            onboarding.name ||
+            user.email?.split("@")[0] ||
+            "Hero";
+          const resolvedUsername =
+            profile.username || user.email?.split("@")[0] || "hero";
+          const resolvedAvatar = profile.avatar_url || "";
+
+          setHeroName(resolvedName);
+          setEditDisplayName(resolvedName);
+          setUsername(resolvedUsername);
+          setEditUsername(resolvedUsername);
+          setAvatarUrl(resolvedAvatar);
+          setEditAvatarUrl(resolvedAvatar);
           setXp(profile.xp || 0);
           setGold(profile.gold || 0);
 
@@ -137,10 +169,9 @@ export default function HeroPage() {
 
         if (onboarding.path) {
           setPathName(onboarding.path);
+          setEditPath(onboarding.path);
         }
 
-        // Fetch quest counts
-        const { quests } = await getQuests(supabase, user.id);
         if (quests) {
           setActiveQuestsCount(
             quests.filter((q) => q.status === "active").length
@@ -158,6 +189,65 @@ export default function HeroPage() {
 
     loadHeroData();
   }, [router]);
+
+  const handleOpenEdit = () => {
+    setEditDisplayName(heroName);
+    setEditUsername(username);
+    setEditAvatarUrl(avatarUrl);
+    setEditPath(pathName);
+    setEditError(null);
+    setEditSuccess(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveCharacter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+
+    setIsSaving(true);
+    setEditError(null);
+    setEditSuccess(null);
+
+    try {
+      const supabase = createClient();
+      const { error } = await updateProfile(supabase, userId, {
+        display_name: editDisplayName,
+        username: editUsername,
+        avatar_url: editAvatarUrl,
+      });
+
+      if (error) {
+        setEditError(error);
+        setIsSaving(false);
+        return;
+      }
+
+      setHeroName(editDisplayName);
+      setUsername(editUsername);
+      setAvatarUrl(editAvatarUrl);
+      setPathName(editPath);
+
+      const onboarding = getOnboardingData();
+      saveOnboardingData({
+        ...onboarding,
+        name: editDisplayName,
+        path: editPath as "Warrior" | "Sage" | "Creator",
+      });
+
+      setEditSuccess("Character profile saved!");
+      setTimeout(() => {
+        setIsEditModalOpen(false);
+        setEditSuccess(null);
+      }, 700);
+      router.refresh();
+    } catch (err) {
+      setEditError(
+        err instanceof Error ? err.message : "Failed to update profile."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!isLoaded) {
     return <HeroLoadingState />;
@@ -227,13 +317,24 @@ export default function HeroPage() {
 
         <div className="relative p-6 sm:p-9 lg:p-10">
           <div className="max-w-xl">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="rounded-full border border-rpg-gold/40 bg-rpg-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-rpg-gold">
-                Rank: Rising Hero
-              </span>
-              <span className="rounded-full border border-purple-400/30 bg-purple-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-purple-200">
-                Archetype: {pathName}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="rounded-full border border-rpg-gold/40 bg-rpg-gold/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-rpg-gold">
+                  Rank: Rising Hero
+                </span>
+                <span className="rounded-full border border-purple-400/30 bg-purple-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-purple-200">
+                  Archetype: {pathName}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenEdit}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-400/40 bg-purple-500/20 text-xs font-semibold text-purple-200 hover:bg-purple-500/30 hover:text-white transition-colors cursor-pointer"
+                title="Edit Character"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span>Edit Character</span>
+              </button>
             </div>
 
             <h2
@@ -441,6 +542,124 @@ export default function HeroPage() {
           })}
         </div>
       </section>
+
+      {/* 6. EDIT CHARACTER MODAL */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-3xl border border-rpg-surface-border bg-rpg-surface p-6 sm:p-8 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-white">Edit Character</h3>
+                <p className="mt-1 text-xs text-slate-400">
+                  Reforge your hero identity, archetype, and public realm seal.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {editError && (
+              <div className="mt-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-300">
+                {editError}
+              </div>
+            )}
+
+            {editSuccess && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3 text-xs text-emerald-300">
+                <Check className="h-4 w-4 text-emerald-400" />
+                <span>{editSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveCharacter} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Display Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editDisplayName}
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                  className="mt-1.5 block w-full rounded-xl border border-rpg-surface-border bg-black/40 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rpg-gold focus:outline-none"
+                  placeholder="Hero Name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Hero Username
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  className="mt-1.5 block w-full rounded-xl border border-rpg-surface-border bg-black/40 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rpg-gold focus:outline-none"
+                  placeholder="hero_username"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Avatar URL
+                </label>
+                <input
+                  type="url"
+                  value={editAvatarUrl}
+                  onChange={(e) => setEditAvatarUrl(e.target.value)}
+                  className="mt-1.5 block w-full rounded-xl border border-rpg-surface-border bg-black/40 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rpg-gold focus:outline-none"
+                  placeholder="https://example.com/avatar.png"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Archetype Path
+                </label>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  {(["Warrior", "Sage", "Creator"] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setEditPath(p)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        editPath === p
+                          ? "border border-rpg-gold bg-rpg-gold/20 text-rpg-gold shadow-gold-glow"
+                          : "border border-rpg-surface-border bg-black/30 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-rpg-gold px-5 py-2.5 text-xs font-bold text-rpg-void shadow-gold-glow hover:brightness-110 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {isSaving ? "Saving..." : "Save Character"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

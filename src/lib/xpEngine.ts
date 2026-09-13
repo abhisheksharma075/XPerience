@@ -104,7 +104,7 @@ export async function addExperience(
       .from('profiles')
       .select('xp, level')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
       return { result: null, error: profileError?.message || 'Profile not found' };
@@ -122,7 +122,7 @@ export async function addExperience(
       })
       .eq('id', userId)
       .select('xp, level')
-      .single();
+      .maybeSingle();
 
     if (updateError || !updatedProfile) {
       return { result: null, error: updateError?.message || 'Failed to update XP' };

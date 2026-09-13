@@ -118,7 +118,7 @@ export async function completeQuestWorkflow(
       .from('quests')
       .select('*')
       .eq('id', questId)
-      .single();
+      .maybeSingle();
 
     if (questError || !quest) {
       return { result: null, error: 'Quest not found.' };
@@ -164,7 +164,7 @@ export async function completeQuestWorkflow(
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
       return { result: null, error: 'Character profile not found.' };
@@ -193,7 +193,7 @@ export async function completeQuestWorkflow(
         completed_at: now.toISOString(),
       })
       .select('id')
-      .single();
+      .maybeSingle();
 
     if (completionError || !completion) {
       return { result: null, error: completionError?.message || 'Failed to record completion.' };
@@ -241,7 +241,7 @@ export async function completeQuestWorkflow(
       })
       .eq('id', userId)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (profileUpdateError || !updatedProfile) {
       return {

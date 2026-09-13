@@ -41,15 +41,32 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch or initialize character profile
-  const { profile } = await ensureProfile(supabase, {
-    id: user.id,
-    email: user.email,
-    user_metadata: user.user_metadata,
-  });
-
-  // Fetch user's quests
-  const { quests } = await getQuests(supabase, user.id);
+  // Fetch character profile, quests, streak history, transactions, shop items, and inventory concurrently in parallel
+  const [
+    { profile },
+    { quests },
+    { data: latestCompletion },
+    { transactions: recentGold },
+    { items: shopItems },
+    { inventory },
+  ] = await Promise.all([
+    ensureProfile(supabase, {
+      id: user.id,
+      email: user.email,
+      user_metadata: user.user_metadata,
+    }),
+    getQuests(supabase, user.id),
+    supabase
+      .from("quest_completions")
+      .select("completed_at")
+      .eq("user_id", user.id)
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    getGoldTransactions(supabase, user.id, 3),
+    getActiveShopItems(supabase),
+    getUserInventory(supabase, user.id),
+  ]);
 
   const activeProfile = profile || {
     id: user.id,
@@ -73,29 +90,11 @@ export default async function DashboardPage() {
   const progress = calculateLevelProgress(activeProfile.xp);
   activeProfile.level = progress.currentLevel;
 
-  // Fetch latest quest completion for streak status
-  const { data: latestCompletion } = await supabase
-    .from("quest_completions")
-    .select("completed_at")
-    .eq("user_id", user.id)
-    .order("completed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
   const streakStatus = getStreakStatus(
     latestCompletion?.completed_at || null,
     activeProfile.current_streak,
     activeProfile.longest_streak
   );
-
-  // Fetch recent gold transactions for audit awareness
-  const { transactions: recentGold } = await getGoldTransactions(supabase, user.id, 3);
-
-  // Fetch active shop items
-  const { items: shopItems } = await getActiveShopItems(supabase);
-
-  // Fetch user inventory
-  const { inventory } = await getUserInventory(supabase, user.id);
 
   const heroName = activeProfile.display_name || user.email?.split("@")[0] || "Adventurer";
 
@@ -180,13 +179,22 @@ export default async function DashboardPage() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold tracking-tight text-white truncate">
-                {heroName}
-              </h2>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-900/40 border border-purple-500/40 text-purple-300 font-mono">
-                @{activeProfile.username || "hero"}
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold tracking-tight text-white truncate">
+                  {heroName}
+                </h2>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-900/40 border border-purple-500/40 text-purple-300 font-mono">
+                  @{activeProfile.username || "hero"}
+                </span>
+              </div>
+              <a
+                href="#edit-character"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-400/30 bg-purple-500/10 text-xs font-semibold text-purple-200 hover:bg-purple-500/20 hover:text-white transition-colors"
+                title="Edit Character Profile"
+              >
+                <span>Edit Character</span>
+              </a>
             </div>
             <p className="mt-1 text-xs text-slate-400 font-mono truncate">
               Hero ID: {user.id}

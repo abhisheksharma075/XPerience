@@ -109,15 +109,15 @@ export async function ensureProfile(
       .from('profiles')
       .upsert(newProfile, { onConflict: 'id' })
       .select('*')
-      .single();
+      .maybeSingle();
 
-    if (insertError) {
-      // In case another process created it simultaneously, try fetching once more
+    if (insertError || !data) {
+      // In case another process created it simultaneously or upsert returned empty, try fetching once more
       const retry = await getProfile(supabase, user.id);
       if (retry.profile) {
         return retry;
       }
-      return { profile: null, error: insertError.message };
+      return { profile: null, error: insertError?.message || 'Profile not found after upsert' };
     }
 
     return { profile: data as Profile, error: null };
@@ -157,13 +157,38 @@ export async function updateProfile(
       .update(updatePayload)
       .eq('id', userId)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) {
       if (error.code === '23505') {
         return { profile: null, error: 'Username is already taken.' };
       }
       return { profile: null, error: error.message };
+    }
+
+    if (!data) {
+      // Profile row may not exist yet if the user signed up prior to triggers/seed.
+      // Auto-ensure profile row and retry update to prevent 404/PGRST116 errors.
+      const { data: authData } = await supabase.auth.getUser();
+      const userToEnsure =
+        authData?.user && authData.user.id === userId ? authData.user : { id: userId };
+      const ensured = await ensureProfile(supabase, userToEnsure);
+      if (ensured.profile) {
+        const retry = await supabase
+          .from('profiles')
+          .update(updatePayload)
+          .eq('id', userId)
+          .select('*')
+          .maybeSingle();
+
+        if (retry.data) {
+          return { profile: retry.data as Profile, error: null };
+        }
+        if (retry.error) {
+          return { profile: null, error: retry.error.message };
+        }
+      }
+      return { profile: null, error: ensured.error || 'Character profile not found.' };
     }
 
     return { profile: data as Profile, error: null };

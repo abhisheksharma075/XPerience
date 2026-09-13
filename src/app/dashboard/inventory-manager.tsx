@@ -78,33 +78,33 @@ export default function InventoryManager({
   };
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+    <div className="rounded-3xl border border-rpg-surface-border bg-rpg-surface/90 p-6 shadow-xl backdrop-blur-md">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
             <span>Adventurer&apos;s Backpack</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 font-semibold">
               Inventory
             </span>
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Your collection of acquired items, equipment, and consumables
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-zinc-100 dark:bg-zinc-800/80 px-3 py-1 rounded-xl text-xs text-zinc-600 dark:text-zinc-400 font-medium">
+        <div className="flex items-center gap-2 self-start sm:self-auto bg-black/30 border border-rpg-surface-border px-3.5 py-1.5 rounded-xl text-xs text-slate-400 font-medium">
           <span>Total Items:</span>
-          <span className="font-bold text-zinc-900 dark:text-zinc-100 font-mono">
+          <span className="font-bold text-rpg-gold font-mono">
             {totalItemCount}
           </span>
         </div>
       </div>
 
       {error && (
-        <div className="mt-4 rounded-xl bg-red-50 dark:bg-red-950/50 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/50 flex items-center justify-between">
+        <div className="mt-4 rounded-xl bg-rose-950/40 p-3 text-xs text-rose-300 border border-rose-500/40 flex items-center justify-between">
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
-            className="text-red-500 hover:text-red-700 font-bold ml-2 cursor-pointer"
+            className="text-rose-400 hover:text-rose-200 font-bold ml-2 cursor-pointer"
           >
             ×
           </button>
@@ -112,18 +112,18 @@ export default function InventoryManager({
       )}
 
       {notification && (
-        <div className="mt-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 p-3 text-xs text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50">
+        <div className="mt-4 rounded-xl bg-emerald-950/40 p-3 text-xs text-emerald-300 border border-emerald-500/40">
           {notification}
         </div>
       )}
 
       {inventory.length === 0 ? (
-        <div className="mt-6 text-center py-10 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40">
+        <div className="mt-6 text-center py-10 rounded-2xl border border-dashed border-rpg-surface-border bg-black/20">
           <span className="text-3xl block mb-2">🎒</span>
-          <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+          <p className="text-xs font-semibold text-slate-300">
             Your backpack is currently empty.
           </p>
-          <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500 max-w-sm mx-auto">
+          <p className="mt-1 text-[11px] text-slate-500 max-w-sm mx-auto">
             Complete quests to earn gold and purchase powerful gear or potions in the Shop above!
           </p>
         </div>
@@ -137,28 +137,28 @@ export default function InventoryManager({
             return (
               <div
                 key={invItem.id}
-                className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
+                className="p-4 rounded-2xl bg-black/30 border border-rpg-surface-border hover:border-rpg-gold/40 transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xl shrink-0">{icon}</span>
-                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                      <h3 className="text-sm font-semibold text-white truncate">
                         {invItem.item.name}
                       </h3>
                     </div>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-mono shrink-0">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-950/40 border border-purple-500/40 text-purple-300 font-mono shrink-0">
                       x{invItem.quantity}
                     </span>
                   </div>
 
-                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                  <p className="mt-2 text-xs text-slate-400 line-clamp-2">
                     {invItem.item.description || 'Acquired adventurer item.'}
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between">
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-200/70 dark:bg-zinc-700/60 text-zinc-600 dark:text-zinc-400 uppercase tracking-wider font-semibold">
+                <div className="mt-4 pt-3 border-t border-rpg-surface-border flex items-center justify-between">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950/40 border border-purple-500/40 text-purple-300 uppercase tracking-wider font-semibold">
                     {invItem.item.item_type}
                   </span>
 
@@ -167,12 +167,12 @@ export default function InventoryManager({
                       type="button"
                       onClick={() => handleUseItem(invItem)}
                       disabled={usingItemId !== null}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rpg-gold text-rpg-void shadow-gold-glow hover:brightness-110 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isUsing ? 'Using...' : 'Use 1x'}
                     </button>
                   ) : (
-                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-medium">
+                    <span className="text-[11px] text-slate-500 font-medium">
                       Equipped / Owned
                     </span>
                   )}

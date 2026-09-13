@@ -84,11 +84,21 @@ export default function StatsPage() {
 
         setUserId(user.id);
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
+        // Fetch profile and latest completion concurrently in parallel
+        const [{ data: profile }, { data: latestComp }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("quest_completions")
+            .select("completed_at")
+            .eq("user_id", user.id)
+            .order("completed_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
 
         const onboarding = getOnboardingData();
 
@@ -110,15 +120,6 @@ export default function StatsPage() {
 
           const progress = calculateLevelProgress(profile.xp || 0);
           setLevel(progress.currentLevel);
-
-          // Check streak completion
-          const { data: latestComp } = await supabase
-            .from("quest_completions")
-            .select("completed_at")
-            .eq("user_id", user.id)
-            .order("completed_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
 
           const streakData = getStreakStatus(
             latestComp?.completed_at || null,

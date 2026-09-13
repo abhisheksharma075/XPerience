@@ -5,17 +5,19 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { syncOnboardingToProfile } from "@/lib/onboarding";
-import { Swords, Sparkles, LogIn } from "lucide-react";
+import { Swords, Sparkles, LogIn, CheckCircle2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectedFrom = searchParams.get("redirectedFrom") || "/dashboard";
   const urlError = searchParams.get("error");
+  const urlMessage = searchParams.get("message");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(urlError);
+  const [message] = useState<string | null>(urlMessage);
   const [loading, setLoading] = useState(false);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -74,6 +76,13 @@ function LoginForm() {
         </p>
       </div>
 
+      {message && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-3.5 text-xs text-emerald-300">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+          <span>{message}</span>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-3.5 text-xs text-rose-300">
           {error}
@@ -101,12 +110,20 @@ function LoginForm() {
         </div>
 
         <div>
-          <label
-            htmlFor="password"
-            className="block text-xs font-semibold uppercase tracking-wider text-slate-300"
-          >
-            Secret Passphrase
-          </label>
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="password"
+              className="block text-xs font-semibold uppercase tracking-wider text-slate-300"
+            >
+              Secret Passphrase
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-rpg-gold hover:underline transition"
+            >
+              Forgot passphrase?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { calculateLevelProgress } from "@/lib/levelSystem";
+import type { Session, AuthChangeEvent } from "@supabase/supabase-js";
 
 interface NavItem {
   name: string;
@@ -59,59 +60,72 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Fetch live character status & subscribe to auth state
+  // Fetch live character status & subscribe to auth state (mount once)
   useEffect(() => {
+    let isMounted = true;
     const supabase = createClient();
 
-    async function checkAuthAndProfile() {
+    async function loadProfileForUser(userId: string, email?: string) {
       try {
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("display_name, xp, gold, current_streak")
+          .eq("id", userId)
+          .maybeSingle();
 
-        if (currentUser) {
-          setUser(currentUser);
+        if (!isMounted) return;
 
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("display_name, xp, gold, current_streak")
-            .eq("id", currentUser.id)
-            .maybeSingle();
-
-          if (profile) {
-            const progress = calculateLevelProgress(profile.xp || 0);
-            setLevel(progress.currentLevel);
-            setGold(profile.gold || 0);
-            setStreak(profile.current_streak || 0);
-            setDisplayName(
-              profile.display_name ||
-                currentUser.email?.split("@")[0] ||
-                "Hero"
-            );
-          }
-        } else {
-          setUser(null);
-          setLevel(null);
-          setGold(null);
-          setStreak(null);
+        if (profile) {
+          const progress = calculateLevelProgress(profile.xp || 0);
+          setLevel(progress.currentLevel);
+          setGold(profile.gold || 0);
+          setStreak(profile.current_streak || 0);
+          setDisplayName(
+            profile.display_name ||
+              email?.split("@")[0] ||
+              "Hero"
+          );
+        } else if (email) {
+          setDisplayName(email.split("@")[0] || "Hero");
         }
       } catch (err) {
-        console.error("Navbar auth check error:", err);
+        console.error("Navbar profile load error:", err);
       }
     }
 
-    checkAuthAndProfile();
+    // Fast initial check from cached session
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        setUser(session.user);
+        loadProfileForUser(session.user.id, session.user.email);
+      } else {
+        setUser(null);
+      }
+    });
 
+    // Listen for auth changes (sign in, sign out, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      checkAuthAndProfile();
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+      if (!isMounted) return;
+      if (session?.user) {
+        setUser(session.user);
+        loadProfileForUser(session.user.id, session.user.email);
+      } else {
+        setUser(null);
+        setLevel(null);
+        setGold(null);
+        setStreak(null);
+        setDisplayName("Adventurer");
+      }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
-  }, [pathname]);
+  }, []);
 
   const handleSignOut = async () => {
     const supabase = createClient();

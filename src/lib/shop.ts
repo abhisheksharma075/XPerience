@@ -112,7 +112,7 @@ export async function purchaseShopItem(
       .select('*')
       .eq('id', itemId)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (itemError || !item) {
       return { result: null, error: 'Shop item not found or is currently inactive.' };
@@ -125,7 +125,7 @@ export async function purchaseShopItem(
       .from('profiles')
       .select('gold')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (profileError || !profile) {
       return { result: null, error: 'User profile not found.' };
@@ -172,7 +172,7 @@ export async function purchaseShopItem(
         .update({ quantity: totalInvQuantity })
         .eq('id', existingInv.id)
         .select('id')
-        .single();
+        .maybeSingle();
 
       if (invError || !updatedInv) {
         return { result: null, error: invError?.message || 'Failed to update inventory.' };
@@ -188,7 +188,7 @@ export async function purchaseShopItem(
           created_at: new Date().toISOString(),
         })
         .select('id')
-        .single();
+        .maybeSingle();
 
       if (invError || !newInv) {
         return { result: null, error: invError?.message || 'Failed to add item to inventory.' };

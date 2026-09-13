@@ -11,7 +11,9 @@ export async function updateSession(request: NextRequest) {
   });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const supabasePublishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabasePublishableKey) {
     return supabaseResponse;
@@ -41,19 +43,36 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Protect /dashboard and other authenticated routes
-  if (!user && pathname.startsWith('/dashboard')) {
+  // Protect /dashboard and all authenticated RPG routes
+  const protectedRoutes = ['/dashboard', '/quests', '/stats', '/inventory', '/hero', '/profile'];
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('redirectedFrom', pathname);
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return redirectResponse;
   }
 
-  // Redirect authenticated users away from auth pages to dashboard
-  if (user && (pathname === '/login' || pathname === '/signup')) {
+  // Redirect authenticated users away from guest auth pages to dashboard
+  // Note: /reset-password must remain accessible when user is authenticated with a recovery session
+  if (
+    user &&
+    (pathname === '/login' ||
+      pathname === '/signup' ||
+      pathname === '/forgot-password')
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;

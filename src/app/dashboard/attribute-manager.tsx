@@ -72,27 +72,27 @@ export default function AttributeManager({
   };
 
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+    <div className="rounded-3xl border border-rpg-surface-border bg-rpg-surface/90 p-6 shadow-xl backdrop-blur-md">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <h2 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
             <span>Character Attributes</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold">
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 font-semibold">
               Core Stats
             </span>
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs text-slate-400 mt-0.5">
             Train and develop your core RPG disciplines. Attributes can never drop below 1.
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="mt-4 rounded-xl bg-red-50 dark:bg-red-950/50 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/50 flex items-center justify-between">
+        <div className="mt-4 rounded-xl bg-rose-950/40 p-3 text-xs text-rose-300 border border-rose-500/40 flex items-center justify-between">
           <span>{error}</span>
           <button
             onClick={() => setError(null)}
-            className="text-red-500 hover:text-red-700 font-bold ml-2"
+            className="text-rose-400 hover:text-rose-200 font-bold ml-2"
           >
             ×
           </button>
@@ -100,7 +100,7 @@ export default function AttributeManager({
       )}
 
       {success && (
-        <div className="mt-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 p-3 text-xs text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50">
+        <div className="mt-4 rounded-xl bg-emerald-950/40 p-3 text-xs text-emerald-300 border border-emerald-500/40">
           {success}
         </div>
       )}
@@ -114,32 +114,32 @@ export default function AttributeManager({
           return (
             <div
               key={attrKey}
-              className="group p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
+              className="group p-4 rounded-2xl bg-black/30 border border-rpg-surface-border hover:border-rpg-gold/40 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                  <span className="text-sm font-semibold text-slate-200 flex items-center gap-1.5">
                     <span>{meta.icon}</span>
                     <span>{meta.label}</span>
                   </span>
-                  <span className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-100 font-mono">
+                  <span className="text-2xl font-black tracking-tight text-rpg-gold font-mono">
                     {currentValue}
                   </span>
                 </div>
-                <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2">
+                <p className="mt-1.5 text-xs text-slate-400 line-clamp-2">
                   {meta.description}
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between">
-                <span className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-                  Level {currentValue}
+              <div className="mt-4 pt-3 border-t border-rpg-surface-border flex items-center justify-between">
+                <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider font-mono">
+                  Tier {currentValue}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleIncrement(attrKey)}
                   disabled={upgradingAttr !== null}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-zinc-900 text-xs font-semibold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-rpg-gold hover:brightness-110 text-rpg-void text-xs font-bold shadow-gold-glow disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
                 >
                   {isUpgrading ? (
                     <span>Upgrading...</span>

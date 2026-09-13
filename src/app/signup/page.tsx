@@ -58,16 +58,20 @@ export default function SignUpPage() {
         return;
       }
 
-      // Sync onboarding data to newly created profile
-      if (data.user) {
-        await syncOnboardingToProfile(supabase, data.user.id);
+      // Supabase returns an empty identities array if the email is already registered
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setError("An adventurer with this email already exists. Please sign in instead.");
+        setLoading(false);
+        return;
       }
 
-      // If Supabase has email confirmation enabled, session will be null
-      if (data.session) {
+      // If Supabase has an active session (e.g. auto-confirm enabled), sync onboarding and navigate
+      if (data.session && data.user) {
+        await syncOnboardingToProfile(supabase, data.user.id);
         router.push("/dashboard");
         router.refresh();
       } else {
+        // If email confirmation is required, session is null; onboarding remains in localStorage and syncs on first login
         setSuccessMessage(
           "Hero account forged! Please check your email inbox to confirm your address before entering the realm."
         );

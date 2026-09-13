@@ -115,12 +115,20 @@ export default function InventoryPage() {
 
         setUserId(user.id);
 
-        // Fetch profile
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
+        // Fetch profile, inventory, and shop items concurrently in parallel
+        const [
+          { data: profile },
+          { inventory: dbInventory },
+          { items: dbShopItems },
+        ] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle(),
+          getUserInventory(supabase, user.id),
+          getActiveShopItems(supabase),
+        ]);
 
         const onboarding = getOnboardingData();
 
@@ -139,17 +147,10 @@ export default function InventoryPage() {
           setPathName(onboarding.path);
         }
 
-        // Fetch live user inventory
-        const { inventory: dbInventory } = await getUserInventory(
-          supabase,
-          user.id
-        );
         if (dbInventory) {
           setInventory(dbInventory);
         }
 
-        // Fetch active shop items
-        const { items: dbShopItems } = await getActiveShopItems(supabase);
         if (dbShopItems) {
           setShopItems(dbShopItems);
         }

@@ -123,8 +123,68 @@ export async function createQuest(
       return { quest: null, error: 'Quest title is required.' };
     }
 
+    // Verify authenticated user from session to ensure RLS compliance
+    let authUser: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null = null;
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      authUser = sessionData.session.user;
+    } else {
+      const { data: userData } = await supabase.auth.getUser();
+      authUser = userData?.user || null;
+    }
+
+    if (!authUser) {
+      return { quest: null, error: 'Authentication required. Please sign in to create quests.' };
+    }
+
+    if (userId && authUser.id !== userId) {
+      return {
+        quest: null,
+        error: 'Cannot create quest: user ID does not match authenticated user.',
+      };
+    }
+
+    const resolvedUserId = authUser.id;
+
+    // Ensure user profile exists before foreign key insert
+    const { data: profileExists } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', resolvedUserId)
+      .maybeSingle();
+
+    if (!profileExists) {
+      const { error: profileError } = await supabase.from('profiles').upsert(
+        {
+          id: resolvedUserId,
+          username: authUser.email
+            ? `${authUser.email.split('@')[0]}_${resolvedUserId.slice(0, 4)}`
+            : `player_${resolvedUserId.slice(0, 6)}`,
+          display_name:
+            (authUser.user_metadata?.display_name as string) ||
+            authUser.email?.split('@')[0] ||
+            'Player',
+          xp: 0,
+          level: 1,
+          gold: 0,
+          strength: 1,
+          intelligence: 1,
+          discipline: 1,
+          vitality: 1,
+        },
+        { onConflict: 'id' }
+      );
+
+      if (profileError) {
+        return {
+          quest: null,
+          error: `Failed to initialize character profile: ${profileError.message}`,
+        };
+      }
+    }
+
     const payload = {
-      user_id: userId,
+      user_id: resolvedUserId,
       title: trimmedTitle,
       description: input.description?.trim() || null,
       xp_reward: Math.max(0, input.xp_reward ?? 0),
@@ -140,10 +200,20 @@ export async function createQuest(
       .from('quests')
       .insert(payload)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) {
+      if (error.code === '42501' || error.message?.includes('row-level security')) {
+        return {
+          quest: null,
+          error: 'Security policy blocked quest creation. Please ensure you are logged in.',
+        };
+      }
       return { quest: null, error: error.message };
+    }
+
+    if (!data) {
+      return { quest: null, error: 'Failed to create quest: no record returned.' };
     }
 
     return { quest: data as Quest, error: null };
@@ -201,10 +271,14 @@ export async function updateQuest(
       .update(updatePayload)
       .eq('id', questId)
       .select('*')
-      .single();
+      .maybeSingle();
 
     if (error) {
       return { quest: null, error: error.message };
+    }
+
+    if (!data) {
+      return { quest: null, error: 'Quest not found or access denied.' };
     }
 
     return { quest: data as Quest, error: null };
